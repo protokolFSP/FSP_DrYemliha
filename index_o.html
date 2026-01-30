@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dr Yemliha FSP Notları</title>
+  <meta name="description" content="Dr Yemliha FSP Notları — doküman arşivi." />
+  <style>
+    :root{
+      --bg:#ffffff;
+      --panel:#fbfbfb;
+      --border:#e7e7e7;
+      --text:#111;
+      --muted:#6b6b6b;
+      --hover:#f3f3f3;
+      --active:#cfe9ff;
+      --blue:#2b7cff;
+      --shadow: 0 10px 30px rgba(0,0,0,.10);
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color:var(--text);
+      background:var(--bg);
+      overflow:hidden; /* scroll sadece panel içinde */
+    }
+
+    .app{ display:flex; height:100vh; width:100vw; }
+
+    /* SIDEBAR */
+    .sidebar{
+      width: 360px;
+      max-width: 92vw;
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+      display:flex;
+      flex-direction:column;
+      height:100vh;
+      position:relative;
+      z-index: 5;
+    }
+    .sbTop{
+      padding: 14px 14px 10px 14px;
+      border-bottom:1px solid var(--border);
+      background: linear-gradient(#fff, #fafafa);
+    }
+    .brandRow{ display:flex; align-items:center; gap:10px; }
+    .menuBtn{
+      display:none;
+      width:40px; height:40px;
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius: 12px;
+      cursor:pointer;
+    }
+    .menuBtn:hover{ background:var(--hover); }
+    .brand{
+      font-weight: 800;
+      font-size: 1.05rem;
+      line-height: 1.05;
+    }
+    .sub{
+      color:var(--muted);
+      font-size: .88rem;
+      margin-top: 4px;
+      line-height: 1.1;
+    }
+
+    .searchRow{
+      margin-top: 10px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    #search{
+      flex: 1 1 auto;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid #d8d8d8;
+      padding: 0 12px;
+      font-size: 1rem;
+      outline:none;
+      background:#fff;
+    }
+    #search:focus{ border-color: var(--blue); box-shadow: 0 0 0 3px rgba(43,124,255,.14); }
+    #clearSearch{
+      width:40px; height:40px;
+      border-radius: 12px;
+      border: 1px solid #d8d8d8;
+      background:#fff;
+      cursor:pointer;
+      font-size: 18px;
+      line-height:1;
+      color:#333;
+    }
+    #clearSearch:hover{ background:var(--hover); }
+    #searchMeta{
+      margin-top: 8px;
+      font-size: .9rem;
+      color: var(--muted);
+      min-height: 1.1em;
+    }
+
+    .sbBody{
+      overflow:auto;
+      padding: 10px 10px 14px 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .group{
+      border: 1px solid var(--border);
+      background:#fff;
+      border-radius: 14px;
+      margin: 10px 4px;
+      box-shadow: 0 1px 0 rgba(0,0,0,.03);
+      overflow:hidden;
+    }
+    .group summary{
+      list-style:none;
+      cursor:pointer;
+      padding: 10px 12px;
+      font-weight: 750;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      user-select:none;
+    }
+    .group summary::-webkit-details-marker{ display:none; }
+    .group summary .gNo{
+      font-family: var(--mono);
+      font-weight: 800;
+      font-size: .92rem;
+      color: #0b5fff;
+      background: rgba(43,124,255,.10);
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(43,124,255,.20);
+      flex: 0 0 auto;
+    }
+    .group summary .gName{ flex: 1 1 auto; min-width:0; }
+    .group summary .chev{
+      width: 18px; height: 18px; flex:0 0 auto; opacity:.75;
+      transform: rotate(0deg);
+      transition: transform .15s ease;
+    }
+    .group[open] summary .chev{ transform: rotate(90deg); }
+
+    .docList{ margin: 0; padding: 0 0 6px 0; list-style:none; }
+    .docList li{ margin:0; }
+    .docLink{
+      display:block;
+      padding: 8px 12px;
+      text-decoration:none;
+      color: var(--text);
+      border-top: 1px solid rgba(0,0,0,.04);
+      line-height: 1.08;
+      word-break: break-word;
+    }
+    .docLink:hover{ background: var(--hover); }
+    .docLink.active{
+      background: var(--active);
+      box-shadow: inset 0 0 0 2px rgba(43,124,255,.22);
+    }
+    mark{
+      background: rgba(245, 158, 11, .22);
+      padding: 0 .12em;
+      border-radius: .3em;
+    }
+
+    /* CONTENT */
+    .content{
+      flex: 1 1 auto;
+      height:100vh;
+      display:flex;
+      flex-direction:column;
+      background: #fff;
+      min-width: 0;
+    }
+    .topbar{
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 10px 14px;
+      gap: 10px;
+      background: #fff;
+      position:relative;
+      z-index: 2;
+    }
+    .docTitle{
+      font-weight: 750;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+    .actions{
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+    .actionBtn{
+      height: 36px;
+      padding: 0 12px;
+      border-radius: 12px;
+      border: 1px solid #d8d8d8;
+      background: #fff;
+      cursor:pointer;
+      text-decoration:none;
+      color: var(--text);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size: .95rem;
+      user-select:none;
+    }
+    .actionBtn:hover{ background: var(--hover); }
+
+    .viewerWrap{
+      position:relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      background: #fff;
+    }
+    #viewer{
+      width:100%;
+      height:100%;
+      border:0;
+      display:block;
+      background:#fff;
+    }
+    #loading{
+      position:absolute;
+      inset: 0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: rgba(255,255,255,.70);
+      backdrop-filter: blur(2px);
+      font-weight: 650;
+      color: #333;
+      opacity: 0;
+      pointer-events:none;
+      transition: opacity .12s ease;
+    }
+    #loading.on{ opacity:1; pointer-events:auto; }
+
+    /* Mobile */
+    @media (max-width: 920px){
+      .sidebar{ width: 340px; }
+    }
+    @media (max-width: 780px){
+      body{ overflow:hidden; }
+      .menuBtn{ display:inline-flex; align-items:center; justify-content:center; }
+      .sidebar{
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-105%);
+        transition: transform .18s ease;
+        box-shadow: var(--shadow);
+        border-right: 1px solid var(--border);
+      }
+      .sidebar.open{ transform: translateX(0); }
+      .overlay{
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.20);
+        opacity: 0;
+        pointer-events:none;
+        transition: opacity .18s ease;
+        z-index: 4;
+      }
+      .overlay.on{ opacity:1; pointer-events:auto; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="sbTop">
+        <div class="brandRow">
+          <button class="menuBtn" id="closeSidebar" title="Kapat" aria-label="Menü">
+            ☰
+          </button>
+          <div style="min-width:0">
+            <div class="brand">Dr Yemliha FSP Notları</div>
+            <div class="sub">Dokümanlar • hızlı arama • sabit görüntüleyici</div>
+          </div>
+        </div>
+
+        <div class="searchRow">
+          <input id="search" type="text" placeholder="Ara (örn: ACS, DM, Epilepsie, 09.05.25)..." autocomplete="off" />
+          <button id="clearSearch" type="button" title="Temizle" aria-label="Temizle">×</button>
+        </div>
+        <div id="searchMeta"></div>
+      </div>
+
+      <div class="sbBody" id="sbBody">
+        <!-- kaynak liste: JS bunu okuyup sıralayıp render ediyor -->
+        <template id="sourceList">
+          <ul><li><strong>15 Epilepsie-C </strong><ul><li><a href="15_Epilepsie-C__Epilepsie_Brief_.png.html">Epilepsie Brief .png</a></li><li><a href="15_Epilepsie-C__Epilepsie_Vollsatz.docx.html">Epilepsie Vollsatz.docx</a></li><li><a href="15_Epilepsie-C__Epilepsie.png.html">Epilepsie.png</a></li><li><a href="15_Epilepsie-C__Epilepsie_DrGuntersFragen.docx.html">Epilepsie_DrGuntersFragen.docx</a></li><li><a href="15_Epilepsie-C__Weiteres_Vorgehen_Epilepsie.docx.html">Weiteres Vorgehen Epilepsie.docx</a></li></ul></li><li><strong>19 Tonsillitis-C</strong><ul><li><a href="19_Tonsillitis-C_Angina_tonsillaris.png.html">Angina tonsillaris.png</a></li><li><a href="19_Tonsillitis-C_Tonsillitis__Brief.png.html">Tonsillitis  Brief.png</a></li><li><a href="19_Tonsillitis-C_Tonsillitis__DrGuntersFragen.docx.html">Tonsillitis _DrGuntersFragen.docx</a></li><li><a href="19_Tonsillitis-C_Tonsillitis_bfz.docx.html">Tonsillitis bfz.docx</a></li><li><a href="19_Tonsillitis-C_Tonsillitis_Vollsatz_.docx.html">Tonsillitis Vollsatz .docx</a></li><li><a href="19_Tonsillitis-C_Weiteres.docx.html">Weiteres.docx</a></li></ul></li><li><strong>13 TVT mit Sinüsitis-C </strong><ul><li><a href="13_TVT_mit_Sinüsitis-C__TVT_mit_Sinusitis__Weiteres_Vorgehen-__.docx.html">TVT mit Sinusitis  Weiteres Vorgehen-  .docx</a></li><li><a href="13_TVT_mit_Sinüsitis-C__TVT_mit_Sinusitis_bfz.docx.html">TVT mit Sinusitis bfz.docx</a></li><li><a href="13_TVT_mit_Sinüsitis-C__TVT_mit_Sinusitis_Vollsatz.docx.html">TVT mit Sinusitis Vollsatz.docx</a></li><li><a href="13_TVT_mit_Sinüsitis-C__TVT_mit_Sinüsitis_Brief.png.html">TVT mit Sinüsitis Brief.png</a></li><li><a href="13_TVT_mit_Sinüsitis-C__TVT_Sinüsitis.png.html">TVT Sinüsitis.png</a></li></ul></li><li><strong>28 Kolonkarzinom-C</strong><ul><li><a href="28_Kolonkarzinom-C_Brief_2.png.html">Brief 2.png</a></li><li><a href="28_Kolonkarzinom-C_Frage.docx.html">Frage.docx</a></li><li><a href="28_Kolonkarzinom-C_Kolonkarzinom_bfz.docx.html">Kolonkarzinom bfz.docx</a></li><li><a href="28_Kolonkarzinom-C_Kolonkarzinom_Brief.png.html">Kolonkarzinom Brief.png</a></li><li><a href="28_Kolonkarzinom-C_Kolonkarzinom_Vollsatz.docx.html">Kolonkarzinom Vollsatz.docx</a></li><li><a href="28_Kolonkarzinom-C_Kolonkarzinom.png.html">Kolonkarzinom.png</a></li><li><a href="28_Kolonkarzinom-C_Kolonkarzinom_DrGuntersFragen.docx.html">Kolonkarzinom_DrGuntersFragen.docx</a></li><li><a href="28_Kolonkarzinom-C_Weiteres_Vorgehen-.docx.html">Weiteres Vorgehen-.docx</a></li></ul></li><li><strong>16 Migraene-C </strong><ul><li><a href="16_Migraene-C__Migrane_bfz.docx.html">Migrane bfz.docx</a></li><li><a href="16_Migraene-C__Migrane_Brief.png.html">Migrane Brief.png</a></li><li><a href="16_Migraene-C__Migrane_Vollsatz.docx.html">Migrane Vollsatz.docx</a></li><li><a href="16_Migraene-C__Migrane_Weiteres_vorgehen.docx.html">Migrane Weiteres vorgehen.docx</a></li><li><a href="16_Migraene-C__Migrane.png.html">Migrane.png</a></li><li><a href="16_Migraene-C__Migrane_DrGuntersFragen.docx.html">Migrane_DrGuntersFragen.docx</a></li></ul></li><li><strong>10 HWS-Diskusprolaps-C</strong><ul><li><a href="10_HWS-Diskusprolaps-C_Ekran_Resmi_2024-08-24_02.12.58.png.html">Ekran Resmi 2024-08-24 02.12.58.png</a></li><li><a href="10_HWS-Diskusprolaps-C_HWS_Weiteres_Vorgehen.docx.html">HWS Weiteres Vorgehen.docx</a></li><li><a href="10_HWS-Diskusprolaps-C_HWS-Diskusprolaps_-_Brief.png.html">HWS-Diskusprolaps - Brief.png</a></li><li><a href="10_HWS-Diskusprolaps-C_HWS-Diskusprolaps_bfz.docx.html">HWS-Diskusprolaps bfz.docx</a></li><li><a href="10_HWS-Diskusprolaps-C_HWS-Diskusprolaps_Vollsatz.docx.html">HWS-Diskusprolaps Vollsatz.docx</a></li><li><a href="10_HWS-Diskusprolaps-C_HWS_DrGuntersFragen.docx.html">HWS_DrGuntersFragen.docx</a></li></ul></li><li><strong>31 Morbus Hodgkin-C </strong><ul><li><a href="31_Morbus_Hodgkin-C__Hodgkin_Lympfom_Vollsatz.docx.html">Hodgkin Lympfom Vollsatz.docx</a></li><li><a href="31_Morbus_Hodgkin-C__Hodgkin_DrGuntersFragen.docx.html">Hodgkin_DrGuntersFragen.docx</a></li><li><a href="31_Morbus_Hodgkin-C__M_Hodgkin.png.html">M Hodgkin.png</a></li><li><a href="31_Morbus_Hodgkin-C__Morbus_Hodgkin__Brief.png.html">Morbus Hodgkin  Brief.png</a></li><li><a href="31_Morbus_Hodgkin-C__Morbus_Hodgkin_bfz.docx.html">Morbus Hodgkin bfz.docx</a></li><li><a href="31_Morbus_Hodgkin-C__Weiteres_Vorgehen__.docx.html">Weiteres Vorgehen  .docx</a></li></ul></li><li><strong>06 Milzruptur-C</strong><ul><li><a href="06_Milzruptur-C_Milzruptur_bfz.docx.html">Milzruptur bfz.docx</a></li><li><a href="06_Milzruptur-C_Milzruptur_Brief.png.html">Milzruptur Brief.png</a></li><li><a href="06_Milzruptur-C_Milzruptur_Vollsatz.docx.html">Milzruptur Vollsatz.docx</a></li><li><a href="06_Milzruptur-C_Milzruptur_Weiteres_Vorgehen.docx.html">Milzruptur Weiteres Vorgehen.docx</a></li><li><a href="06_Milzruptur-C_Milzruptur_DrGuntersFragen.docx.html">Milzruptur_DrGuntersFragen.docx</a></li><li><a href="06_Milzruptur-C_Unfallhergang_Inlinerunfall_mit_Milzruptur.docx.html">Unfallhergang Inlinerunfall mit Milzruptur.docx</a></li></ul></li><li><strong>05 Polytrauma-C</strong><ul><li><a href="05_Polytrauma-C_Ekran_Resmi_2024-08-24_01.46.26.png.html">Ekran Resmi 2024-08-24 01.46.26.png</a></li><li><a href="05_Polytrauma-C_Polytrauma_bfz.docx.html">Polytrauma bfz.docx</a></li><li><a href="05_Polytrauma-C_Polytrauma_Brief.png.html">Polytrauma Brief.png</a></li><li><a href="05_Polytrauma-C_Polytrauma_Vollsatz.docx.html">Polytrauma Vollsatz.docx</a></li><li><a href="05_Polytrauma-C_Polytrauma_Weiteres_Vorgehen.docx.html">Polytrauma Weiteres Vorgehen.docx</a></li><li><a href="05_Polytrauma-C_Polytrauma_DrGuntersFragen.docx.html">Polytrauma_DrGuntersFragen.docx</a></li></ul></li><li><strong>32 DM-C</strong><ul><li><a href="32_DM-C_Diabetes_mellitus_Typ_II_Vollsatz.docx.html">Diabetes mellitus Typ II Vollsatz.docx</a></li><li><a href="32_DM-C_Diabetische_Ketoazidose_Vollsatz.docx.html">Diabetische Ketoazidose Vollsatz.docx</a></li></ul></li><li><strong>23 Herzinsuffizienz-C</strong><ul><li><a href="23_Herzinsuffizienz-C_Herzinsuffiziens_Weiteres_Vorgehen-.docx.html">Herzinsuffiziens Weiteres Vorgehen-.docx</a></li><li><a href="23_Herzinsuffizienz-C_Herzinsuffizienz_bfz.docx.html">Herzinsuffizienz bfz.docx</a></li><li><a href="23_Herzinsuffizienz-C_Herzinsuffizienz_Brief.png.html">Herzinsuffizienz Brief.png</a></li><li><a href="23_Herzinsuffizienz-C_Herzinsuffizienz_Vollsatz.docx.html">Herzinsuffizienz Vollsatz.docx</a></li><li><a href="23_Herzinsuffizienz-C_Herzinsuffizienz_DrGuntersFragen.docx.html">Herzinsuffizienz_DrGuntersFragen.docx</a></li><li><a href="23_Herzinsuffizienz-C_Herzinsüffizienz.png.html">Herzinsüffizienz.png</a></li></ul></li><li><strong>04 Patellafraktur-C</strong><ul><li><a href="04_Patellafraktur-C_Patellafraktur_bfz.docx.html">Patellafraktur bfz.docx</a></li><li><a href="04_Patellafraktur-C_Patellafraktur_Brief_1.png.html">Patellafraktur Brief 1.png</a></li><li><a href="04_Patellafraktur-C_Patellafraktur_Brief.png.html">Patellafraktur Brief.png</a></li><li><a href="04_Patellafraktur-C_Patellafraktur_Vollsatz.docx.html">Patellafraktur Vollsatz.docx</a></li><li><a href="04_Patellafraktur-C_Patellafraktur_Weiteres_Vorgehen.docx.html">Patellafraktur Weiteres Vorgehen.docx</a></li><li><a href="04_Patellafraktur-C_Patellafraktur_DrGuntersFragen.docx.html">Patellafraktur_DrGuntersFragen.docx</a></li></ul></li><li><strong>29 Colitis ulcerosa-C </strong><ul><li><a href="29_Colitis_ulcerosa-C__Colitis_ulcerosa__Brief.png.html">Colitis ulcerosa  Brief.png</a></li><li><a href="29_Colitis_ulcerosa-C__Colitis_ulcerosa_bfz.docx.html">Colitis ulcerosa bfz.docx</a></li><li><a href="29_Colitis_ulcerosa-C__Colitis_ulcerosa_Vollsatz.docx.html">Colitis ulcerosa Vollsatz.docx</a></li></ul></li><li><strong>01 Anamnese Strüktur</strong><ul><li><a href="01_Anamnese_Strüktur_ACIKLAMALI_MÜNCHEN_FaeLLE.docx.html">ACIKLAMALI MÜNCHEN FaeLLE.docx</a></li><li><a href="01_Anamnese_Strüktur_ALLGEMEINE__ANAMNESE..docx.html">ALLGEMEINE  ANAMNESE..docx</a></li><li><a href="01_Anamnese_Strüktur_Anamnese_DrGuntersFragen.pdf.html">Anamnese_DrGuntersFragen.pdf</a></li><li><a href="01_Anamnese_Strüktur_REDEMITTEL_DrGuntersFragen.docx.html">REDEMITTEL_DrGuntersFragen.docx</a></li><li><a href="01_Anamnese_Strüktur_Unfall_Verben_Vollsatz.docx.html">Unfall Verben Vollsatz.docx</a></li><li><a href="01_Anamnese_Strüktur_Unfallbeschreibungen_zur_distalen_Radiusfraktur.docx.html">Unfallbeschreibungen zur distalen Radiusfraktur.docx</a></li><li><a href="01_Anamnese_Strüktur_Unfallhergang_Sprunggelenksfraktur.docx.html">Unfallhergang Sprunggelenksfraktur.docx</a></li></ul></li><li><strong>21 Urolithiasis-C </strong><ul><li><a href="21_Urolithiasis-C__Nephrolithiasis_DrGuntersFragen.docx.html">Nephrolithiasis_DrGuntersFragen.docx</a></li><li><a href="21_Urolithiasis-C__Urolithiasis__Weiteres_Vorgehen-__.docx.html">Urolithiasis  Weiteres Vorgehen-  .docx</a></li><li><a href="21_Urolithiasis-C__Urolithiasis_bfz.docx.html">Urolithiasis bfz.docx</a></li><li><a href="21_Urolithiasis-C__Urolithiasis_Brief.png.html">Urolithiasis Brief.png</a></li><li><a href="21_Urolithiasis-C__Urolithiasis_Vollsatz.docx.html">Urolithiasis Vollsatz.docx</a></li><li><a href="21_Urolithiasis-C__Urolithiasis.png.html">Urolithiasis.png</a></li></ul></li><li><strong>29 Enterokolitis-C</strong><ul><li><a href="29_Enterokolitis-C_Enterokolitis_Brief.png.html">Enterokolitis Brief.png</a></li><li><a href="29_Enterokolitis-C_Enterokolitis_Vollsatz.docx.html">Enterokolitis Vollsatz.docx</a></li><li><a href="29_Enterokolitis-C_Frage_Enterokolitis.docx.html">Frage Enterokolitis.docx</a></li><li><a href="29_Enterokolitis-C_infektiöse_Enterokolitis_bfz.docx.html">infektiöse Enterokolitis bfz.docx</a></li><li><a href="29_Enterokolitis-C_Weiteres_Vorgehen.docx.html">Weiteres Vorgehen.docx</a></li></ul></li><li><strong>22 Pyelonephritis-C</strong><ul><li><a href="22_Pyelonephritis-C_Pyelonephritis_bfz.docx.html">Pyelonephritis bfz.docx</a></li><li><a href="22_Pyelonephritis-C_Pyelonephritis_Brief.png.html">Pyelonephritis Brief.png</a></li><li><a href="22_Pyelonephritis-C_Pyelonephritis_Vollsatz.docx.html">Pyelonephritis Vollsatz.docx</a></li><li><a href="22_Pyelonephritis-C_Pyelonephritis.png.html">Pyelonephritis.png</a></li><li><a href="22_Pyelonephritis-C_Pyelonephritis_DrGuntersFragen.docx.html">Pyelonephritis_DrGuntersFragen.docx</a></li><li><a href="22_Pyelonephritis-C_Weiteres_vorgehen.docx.html">Weiteres vorgehen.docx</a></li></ul></li><li><strong>25 Ösophaguskarzinom-C</strong><ul><li><a href="25_Ösophaguskarzinom-C_Brief_2.png.html">Brief 2.png</a></li><li><a href="25_Ösophaguskarzinom-C_Frage_das_Ösophaguskarzinom.docx.html">Frage das Ösophaguskarzinom.docx</a></li><li><a href="25_Ösophaguskarzinom-C_Osophaguskarzinom.png.html">Osophaguskarzinom.png</a></li><li><a href="25_Ösophaguskarzinom-C_Ösophaguskarzinom__Brief.png.html">Ösophaguskarzinom  Brief.png</a></li><li><a href="25_Ösophaguskarzinom-C_Ösophaguskarzinom__Vollsatz.docx.html">Ösophaguskarzinom  Vollsatz.docx</a></li><li><a href="25_Ösophaguskarzinom-C_Ösophaguskarzinom_bfz.docx.html">Ösophaguskarzinom bfz.docx</a></li><li><a href="25_Ösophaguskarzinom-C_Ösophaguskarzinom_DrGuntersFragen.docx.html">Ösophaguskarzinom_DrGuntersFragen.docx</a></li><li><a href="25_Ösophaguskarzinom-C_Weiteres_Vorgehen.docx.html">Weiteres Vorgehen.docx</a></li></ul></li><li><strong>11 LWS Diskusprolaps-C</strong><ul><li><a href="11_LWS_Diskusprolaps-C_Diskusprolaps_Vollsatz-C.docx.html">Diskusprolaps Vollsatz-C.docx</a></li><li><a href="11_LWS_Diskusprolaps-C_LWS_Diskusprolaps__Vollsatz.docx.html">LWS Diskusprolaps  Vollsatz.docx</a></li><li><a href="11_LWS_Diskusprolaps-C_LWS_Diskusprolaps_bfz.docx.html">LWS Diskusprolaps bfz.docx</a></li><li><a href="11_LWS_Diskusprolaps-C_LWS_Diskusprolaps_Brieff.docx.html">LWS Diskusprolaps Brieff.docx</a></li><li><a href="11_LWS_Diskusprolaps-C_LWS-_Diskusprolaps_Weiteres.docx.html">LWS- Diskusprolaps Weiteres.docx</a></li><li><a href="11_LWS_Diskusprolaps-C_LWS.png.html">LWS.png</a></li><li><a href="11_LWS_Diskusprolaps-C_LWS_DrGuntersFragen.docx.html">LWS_DrGuntersFragen.docx</a></li></ul></li><li><strong>13 TVT-C</strong><ul><li><a href="13_TVT-C_TVT__Weiteres_Vorgehen-__.docx.html">TVT  Weiteres Vorgehen-  .docx</a></li><li><a href="13_TVT-C_TVT_bfz.docx.html">TVT bfz.docx</a></li><li><a href="13_TVT-C_TVT_Brief.png.html">TVT Brief.png</a></li><li><a href="13_TVT-C_TVT_Vollsatz.docx.html">TVT Vollsatz.docx</a></li><li><a href="13_TVT-C_TVT_DrGuntersFragen.docx.html">TVT_DrGuntersFragen.docx</a></li></ul></li><li><strong>17 Pneumonie-C</strong><ul><li><a href="17_Pneumonie-C_Pneumonie__Weiteres_Vorgehen.docx.html">Pneumonie  Weiteres Vorgehen.docx</a></li><li><a href="17_Pneumonie-C_Pneumonie_Brief.png.html">Pneumonie Brief.png</a></li><li><a href="17_Pneumonie-C_Pneumonie_Vollsatz.docx.html">Pneumonie Vollsatz.docx</a></li><li><a href="17_Pneumonie-C_Pneumonie.png.html">Pneumonie.png</a></li><li><a href="17_Pneumonie-C_Pneumonie_DrGuntersFragen.docx.html">Pneumonie_DrGuntersFragen.docx</a></li></ul></li><li><strong>14 Ulcus cruris-C</strong><ul><li><a href="14_Ulcus_cruris-C_Ulcus_cruris_bfz.docx.html">Ulcus cruris bfz.docx</a></li><li><a href="14_Ulcus_cruris-C_Ulcus_cruris_Brief.png.html">Ulcus cruris Brief.png</a></li><li><a href="14_Ulcus_cruris-C_Ulcus_cruris_Vollsatz.docx.html">Ulcus cruris Vollsatz.docx</a></li><li><a href="14_Ulcus_cruris-C_Ulcus_cruris_Weiteres_vorgehen.docx.html">Ulcus cruris Weiteres vorgehen.docx</a></li><li><a href="14_Ulcus_cruris-C_Ulcus_cruris.png.html">Ulcus cruris.png</a></li><li><a href="14_Ulcus_cruris-C_Ulcus_cruris_DrGuntersFragen.docx.html">Ulcus cruris_DrGuntersFragen.docx</a></li></ul></li><li><strong>12 pAVK-C</strong><ul><li><a href="12_pAVK-C_pAVK_bfz.docx.html">pAVK bfz.docx</a></li><li><a href="12_pAVK-C_pAVK_Brief.png.html">pAVK Brief.png</a></li><li><a href="12_pAVK-C_pAVK_Vollsatz.docx.html">pAVK Vollsatz.docx</a></li><li><a href="12_pAVK-C_pAVK_Weiteres_Vorgehen.docx.html">pAVK Weiteres Vorgehen.docx</a></li><li><a href="12_pAVK-C_pAVK.png.html">pAVK.png</a></li><li><a href="12_pAVK-C_pAVK_DrGuntersFragen.docx.html">pAVK_DrGuntersFragen.docx</a></li></ul></li><li><strong>03 OSG-C</strong><ul><li><a href="03_OSG-C_OSG_bfz.docx.html">OSG bfz.docx</a></li><li><a href="03_OSG-C_OSG_Brief_1.png.html">OSG Brief 1.png</a></li><li><a href="03_OSG-C_OSG_Brief.png.html">OSG Brief.png</a></li><li><a href="03_OSG-C_OSG_Vollsatz.docx.html">OSG Vollsatz.docx</a></li><li><a href="03_OSG-C_OSG_DrGuntersFragen.docx.html">OSG_DrGuntersFragen.docx</a></li><li><a href="03_OSG-C_Weiteres_Vorgehen_OSG.docx.html">Weiteres Vorgehen OSG.docx</a></li></ul></li><li><strong>08 Hypothyreose-C</strong><ul><li><a href="08_Hypothyreose-C_Hypothyreose__Brief_1.png.html">Hypothyreose  Brief 1.png</a></li><li><a href="08_Hypothyreose-C_Hypothyreose_bfz.docx.html">Hypothyreose bfz.docx</a></li><li><a href="08_Hypothyreose-C_Hypothyreose_Brief.png.html">Hypothyreose Brief.png</a></li><li><a href="08_Hypothyreose-C_Hypothyreose_Vollsatz.docx.html">Hypothyreose Vollsatz.docx</a></li><li><a href="08_Hypothyreose-C_Hypothyreose_Weiteres_Vorgehen.docx.html">Hypothyreose Weiteres Vorgehen.docx</a></li><li><a href="08_Hypothyreose-C_Hypothyreose_DrGuntersFragen.docx.html">Hypothyreose_DrGuntersFragen.docx</a></li></ul></li><li><strong>24 Angina pectoris - ACS -C</strong><ul><li><a href="24_Angina_pectoris_-_ACS_-C_Angina_Pectoris_DrGuntersFragen.docx.html">Angina Pectoris_DrGuntersFragen.docx</a></li><li><a href="24_Angina_pectoris_-_ACS_-C_KHK-_Angina_Brief.png.html">KHK- Angina Brief.png</a></li><li><a href="24_Angina_pectoris_-_ACS_-C_KHK-_Angina_pectoris_.docx.html">KHK- Angina pectoris .docx</a></li><li><a href="24_Angina_pectoris_-_ACS_-C_KHK-_Angina_pectoris_Vollsatz.docx.html">KHK- Angina pectoris Vollsatz.docx</a></li></ul></li><li><strong>07 Hyperthyreose-C </strong><ul><li><a href="07_Hyperthyreose-C__Ekran_Resmi_2024-08-24_01.49.47.png.html">Ekran Resmi 2024-08-24 01.49.47.png</a></li><li><a href="07_Hyperthyreose-C__Hyperthyreose_bfz.docx.html">Hyperthyreose bfz.docx</a></li><li><a href="07_Hyperthyreose-C__Hyperthyreose_Brief.docx.html">Hyperthyreose Brief.docx</a></li><li><a href="07_Hyperthyreose-C__Hyperthyreose_Vollsatz.docx.html">Hyperthyreose Vollsatz.docx</a></li><li><a href="07_Hyperthyreose-C__Hyperthyreose_Weiteres_Vorgehen.docx.html">Hyperthyreose Weiteres Vorgehen.docx</a></li><li><a href="07_Hyperthyreose-C__Hyperthyreose_DrGuntersFragen.docx.html">Hyperthyreose_DrGuntersFragen.docx</a></li></ul></li><li><strong>01 DrGuntersFragen</strong><ul><li><a href="01_DrGuntersFragen_Anamnese_DrGuntersFragen.pdf.html">Anamnese_DrGuntersFragen.pdf</a></li><li><a href="01_DrGuntersFragen_Angina_Pectoris_DrGuntersFragen.docx.html">Angina Pectoris_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Asthma_DrGuntersFragen.docx.html">Asthma_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Cholezystolithiasis_DrGuntersFragen.docx.html">Cholezystolithiasis_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Enterokolitis_DrGuntersFragen.docx.html">Enterokolitis_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Epilepsie_DrGuntersFragen.docx.html">Epilepsie_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Handgelenksfraktur_+_Hüftgelenksdistorsion__DrGuntersFragen.docx.html">Handgelenksfraktur + Hüftgelenksdistorsion _DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Handgelenksfraktur_+_Rippenfraktur_DrGuntersFragen.docx.html">Handgelenksfraktur + Rippenfraktur_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Herzinsuffizienz_DrGuntersFragen.docx.html">Herzinsuffizienz_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Hodgkin_DrGuntersFragen.docx.html">Hodgkin_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_HWS_DrGuntersFragen.docx.html">HWS_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Hyperthyreose_DrGuntersFragen.docx.html">Hyperthyreose_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Hypoglykämie_DrGuntersFragen.docx.html">Hypoglykämie_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Hypothyreose_DrGuntersFragen.docx.html">Hypothyreose_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Infektiöse_Mononucleose_DrGuntersFragen.docx.html">Infektiöse Mononucleose_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Kolonkarzinom_DrGuntersFragen.docx.html">Kolonkarzinom_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Leukaemie_DrGuntersFragen.docx.html">Leukaemie_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_LWS_DrGuntersFragen.docx.html">LWS_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Migräne_DrGuntersFragen.docx.html">Migräne_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Milzruptur_DrGuntersFragen.docx.html">Milzruptur_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Nephrolithiasis_DrGuntersFragen.docx.html">Nephrolithiasis_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_OSG_DrGuntersFragen.docx.html">OSG_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Ösophaguskarzinom_DrGuntersFragen.docx.html">Ösophaguskarzinom_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Patellafraktur_DrGuntersFragen.docx.html">Patellafraktur_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_pAVK_DrGuntersFragen.docx.html">pAVK_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Pneumonie_DrGuntersFragen.docx.html">Pneumonie_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Polytrauma_DrGuntersFragen.docx.html">Polytrauma_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Pyelonephritis_DrGuntersFragen.docx.html">Pyelonephritis_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_REDEMITTEL_DrGuntersFragen.docx.html">REDEMITTEL_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Tonsillitis__DrGuntersFragen.docx.html">Tonsillitis _DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_TVT_DrGuntersFragen.docx.html">TVT_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Ulcus_cruris_DrGuntersFragen.docx.html">Ulcus cruris_DrGuntersFragen.docx</a></li><li><a href="01_DrGuntersFragen_Ulcus_ventriculi_DrGuntersFragen.docx.html">Ulcus ventriculi_DrGuntersFragen.docx</a></li></ul></li><li><strong>26 Choledocholithiasis-C</strong><ul><li><a href="26_Choledocholithiasis-C_Brief_2.png.html">Brief 2.png</a></li><li><a href="26_Choledocholithiasis-C_Choledocholithiasis_Brief.png.html">Choledocholithiasis Brief.png</a></li><li><a href="26_Choledocholithiasis-C_Cholezystolithiasis_bfz.docx.html">Cholezystolithiasis bfz.docx</a></li><li><a href="26_Choledocholithiasis-C_Cholezystolithiasis_Vollsatz.docx.html">Cholezystolithiasis Vollsatz.docx</a></li><li><a href="26_Choledocholithiasis-C_Cholezystolithiasis.png.html">Cholezystolithiasis.png</a></li><li><a href="26_Choledocholithiasis-C_Cholezystolithiasis_DrGuntersFragen.docx.html">Cholezystolithiasis_DrGuntersFragen.docx</a></li><li><a href="26_Choledocholithiasis-C_Frage_Cholezystolithiasis.docx.html">Frage Cholezystolithiasis.docx</a></li><li><a href="26_Choledocholithiasis-C_Weiteres_Vorgehen-.docx.html">Weiteres Vorgehen-.docx</a></li></ul></li><li><strong>20 Infektiöse mononukleose-C</strong><ul><li><a href="20_Infektiöse_mononukleose-C_IM.png.html">IM.png</a></li><li><a href="20_Infektiöse_mononukleose-C_Infektiöse_Mononucleose_DrGuntersFragen.docx.html">Infektiöse Mononucleose_DrGuntersFragen.docx</a></li><li><a href="20_Infektiöse_mononukleose-C_infektiöse_Mononukleose_bfz.docx.html">infektiöse Mononukleose bfz.docx</a></li><li><a href="20_Infektiöse_mononukleose-C_Infektiöse_mononukleose_Brief.png.html">Infektiöse mononukleose Brief.png</a></li><li><a href="20_Infektiöse_mononukleose-C_infektiöse_Mononukleose_Vollsatz.docx.html">infektiöse Mononukleose Vollsatz.docx</a></li><li><a href="20_Infektiöse_mononukleose-C_Weiteres_vorgehen.docx.html">Weiteres vorgehen.docx</a></li></ul></li><li><strong>18 Asthma bronchiale-C</strong><ul><li><a href="18_Asthma_bronchiale-C_Asthma_bronchiale_bfz_______________________________________________________________________.docx.html">Asthma bronchiale bfz                                                                       .docx</a></li><li><a href="18_Asthma_bronchiale-C_Asthma_bronchiale_Brief.png.html">Asthma bronchiale Brief.png</a></li><li><a href="18_Asthma_bronchiale-C_Asthma_bronchiale_Vollsatz.docx.html">Asthma bronchiale Vollsatz.docx</a></li><li><a href="18_Asthma_bronchiale-C_Asthma_bronschiale__Weiteres_Vorgehen__.docx.html">Asthma bronschiale  Weiteres Vorgehen  .docx</a></li><li><a href="18_Asthma_bronchiale-C_Asthma.png.html">Asthma.png</a></li><li><a href="18_Asthma_bronchiale-C_Asthma_DrGuntersFragen.docx.html">Asthma_DrGuntersFragen.docx</a></li></ul></li><li><strong>30 Akute Leukaemie-C </strong><ul><li><a href="30_Akute_Leukaemie-C__30-chronische_Leukaemie_Vollsatz-C.docx.html">30-chronische Leukaemie Vollsatz-C.docx</a></li><li><a href="30_Akute_Leukaemie-C__akute_Leukaemie_Brief.png.html">akute Leukaemie Brief.png</a></li><li><a href="30_Akute_Leukaemie-C__akute_Leukaemie_Vollsatz.docx.html">akute Leukaemie Vollsatz.docx</a></li><li><a href="30_Akute_Leukaemie-C__Frage_Leukaemie.docx.html">Frage Leukaemie.docx</a></li><li><a href="30_Akute_Leukaemie-C__Leukaemie.png.html">Leukaemie.png</a></li><li><a href="30_Akute_Leukaemie-C__Leukaemie_DrGuntersFragen.docx.html">Leukaemie_DrGuntersFragen.docx</a></li><li><a href="30_Akute_Leukaemie-C__Weiteres_Vorgehen.docx.html">Weiteres Vorgehen.docx</a></li></ul></li><li><strong>27 Ulcus ventriculi-C</strong><ul><li><a href="27_Ulcus_ventriculi-C_Brief_2.png.html">Brief 2.png</a></li><li><a href="27_Ulcus_ventriculi-C_Frage_Ulcus_ventriculi.docx.html">Frage Ulcus ventriculi.docx</a></li><li><a href="27_Ulcus_ventriculi-C_Ulcus_ventriculi__Brief.png.html">Ulcus ventriculi  Brief.png</a></li><li><a href="27_Ulcus_ventriculi-C_Ulcus_ventriculi_bfz.docx.html">Ulcus ventriculi bfz.docx</a></li><li><a href="27_Ulcus_ventriculi-C_Ulcus_ventriculi_Vollsatz.docx.html">Ulcus ventriculi Vollsatz.docx</a></li><li><a href="27_Ulcus_ventriculi-C_Ulcus_ventriculi_DrGuntersFragen.docx.html">Ulcus ventriculi_DrGuntersFragen.docx</a></li><li><a href="27_Ulcus_ventriculi-C_Ulcus_ventriküli.png.html">Ulcus ventriküli.png</a></li><li><a href="27_Ulcus_ventriculi-C_Weiteres_vorgehen.docx.html">Weiteres vorgehen.docx</a></li></ul></li><li><strong>01 Handgelenksfraktur + Rippenfraktur -C</strong><ul><li><a href="01_Handgelenksfraktur_+_Rippenfraktur_-C_1-Handgelenksfraktur_+_Rippenfraktur.docx.html">1-Handgelenksfraktur + Rippenfraktur.docx</a></li><li><a href="01_Handgelenksfraktur_+_Rippenfraktur_-C_2-Handgelenksfraktur_Rippen_Vollsatz.docx.html">2-Handgelenksfraktur Rippen Vollsatz.docx</a></li><li><a href="01_Handgelenksfraktur_+_Rippenfraktur_-C_3-Handgelenksfraktur_+_Rippenfraktur_Brieff.docx.html">3-Handgelenksfraktur + Rippenfraktur Brieff.docx</a></li><li><a href="01_Handgelenksfraktur_+_Rippenfraktur_-C_4-Ekran_Resmi_2024-08-20_18.48.47.png.html">4-Ekran Resmi 2024-08-20 18.48.47.png</a></li><li><a href="01_Handgelenksfraktur_+_Rippenfraktur_-C_5-Weiteres_vorgehen.docx.html">5-Weiteres vorgehen.docx</a></li><li><a href="01_Handgelenksfraktur_+_Rippenfraktur_-C_6-Unfallbeschreibungen_zur_distalen_Radiusfraktur.docx.html">6-Unfallbeschreibungen zur distalen Radiusfraktur.docx</a></li><li><a href="01_Handgelenksfraktur_+_Rippenfraktur_-C_Handgelenksfraktur_+_Rippenfraktur_bfz.docx.html">Handgelenksfraktur + Rippenfraktur bfz.docx</a></li><li><a href="01_Handgelenksfraktur_+_Rippenfraktur_-C_Handgelenksfraktur_+_Rippenfraktur_DrGuntersFragen.docx.html">Handgelenksfraktur + Rippenfraktur_DrGuntersFragen.docx</a></li></ul></li><li><strong>02 Handgelenksfraktur + Hüftgelenksdistorsion-C</strong><ul><li><a href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Brief.png.html">Brief.png</a></li><li><a href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion__DrGuntersFragen.docx.html">Handgelenksfraktur + Hüftgelenksdistorsion _DrGuntersFragen.docx</a></li><li><a href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion_bfz.docx.html">Handgelenksfraktur + Hüftgelenksdistorsion bfz.docx</a></li><li><a href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion_Brief.png.html">Handgelenksfraktur + Hüftgelenksdistorsion Brief.png</a></li><li><a href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion_Vollsatz.docx.html">Handgelenksfraktur + Hüftgelenksdistorsion Vollsatz.docx</a></li><li><a href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_Rippen_Weiteres_Vorgehen_.docx.html">Handgelenksfraktur Rippen Weiteres Vorgehen .docx</a></li></ul></li><li><strong>09 Hypoglykaemie-C</strong><ul><li><a href="09_Hypoglykaemie-C_Ekran_Resmi_2024-08-24_01.54.09.png.html">Ekran Resmi 2024-08-24 01.54.09.png</a></li><li><a href="09_Hypoglykaemie-C_Hypoglykaemie_bfz.docx.html">Hypoglykaemie bfz.docx</a></li><li><a href="09_Hypoglykaemie-C_Hypoglykaemie_Brief.docx.html">Hypoglykaemie Brief.docx</a></li><li><a href="09_Hypoglykaemie-C_Hypoglykaemie_Brieff.docx.html">Hypoglykaemie Brieff.docx</a></li><li><a href="09_Hypoglykaemie-C_Hypoglykaemie_Vollsatz.docx.html">Hypoglykaemie Vollsatz.docx</a></li><li><a href="09_Hypoglykaemie-C_Hypoglykaemie_Weiteres_vorgehen.docx.html">Hypoglykaemie Weiteres vorgehen.docx</a></li><li><a href="09_Hypoglykaemie-C_Hypoglykaemie_DrGuntersFragen.docx.html">Hypoglykaemie_DrGuntersFragen.docx</a></li></ul></li><li><strong>24 Myokardinfarkt-C </strong><ul><li><a href="24_Myokardinfarkt-C__Herzinfarkt.png.html">Herzinfarkt.png</a></li><li><a href="24_Myokardinfarkt-C__Myokardinfarkt__Weitere_Schritte.docx.html">Myokardinfarkt  Weitere Schritte.docx</a></li><li><a href="24_Myokardinfarkt-C__Myokardinfarkt_bfz.docx.html">Myokardinfarkt bfz.docx</a></li><li><a href="24_Myokardinfarkt-C__Myokardinfarkt_Brief_.png.html">Myokardinfarkt Brief .png</a></li><li><a href="24_Myokardinfarkt-C__Myokardinfarkt_Vollsatz.docx.html">Myokardinfarkt Vollsatz.docx</a></li></ul></li><li><strong>29 Enterokolitis : CED-C</strong><ul><li><a href="29_Enterokolitis_:_CED-C_Enterokolitis__Brief.png.html">Enterokolitis  Brief.png</a></li><li><a href="29_Enterokolitis_:_CED-C_Enterokolitis_bfz.docx.html">Enterokolitis bfz.docx</a></li><li><a href="29_Enterokolitis_:_CED-C_Enterokolitis_Vollsatz.docx.html">Enterokolitis Vollsatz.docx</a></li><li><a href="29_Enterokolitis_:_CED-C_Enterokolitis_DrGuntersFragen.docx.html">Enterokolitis_DrGuntersFragen.docx</a></li></ul></li></ul>
+        </template>
+
+        <div id="nav"></div>
+      </div>
+    </aside>
+
+    <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+    <main class="content">
+      <div class="topbar">
+        <button class="menuBtn" id="openSidebar" title="Menü" aria-label="Menü">☰</button>
+        <div class="docTitle" id="docTitle">Bir doküman seç…</div>
+        <div class="actions">
+          <a class="actionBtn" id="openNewTab" href="#" target="_blank" rel="noopener">Yeni sekme</a>
+          <button class="actionBtn" id="copyLink" type="button" title="Bağlantıyı kopyala">Kopyala</button>
+        </div>
+      </div>
+
+      <div class="viewerWrap">
+        <iframe id="viewer" title="Doküman görüntüleyici" loading="lazy"></iframe>
+        <div id="loading">Yükleniyor…</div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // --- helpers
+    const norm = (s) => {
+      s = (s || "").toString().toLowerCase();
+      s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      s = s.replace(/ı/g, "i").replace(/ß/g, "ss");
+      s = s.replace(/\s+/g, " ").trim();
+      return s;
+    };
+
+    function getLeadingNumber(text) {
+      const m = (text || "").toString().match(/^\s*(\d{1,3})\b/);
+      return m ? Number(m[1]) : null;
+    }
+
+    function escapeHtml(s){
+      return (s ?? "").toString()
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#39;");
+    }
+
+    function highlight(text, tokens){
+      if (!tokens.length) return escapeHtml(text);
+      let out = escapeHtml(text);
+      // basit highlight: token'ları sırayla işaretle (case-insensitive değil; norm üzerinden match alıp orijinale uygulamak zor)
+      // Bu yüzden: orijinal metinde (lower) ilk geçenleri işaretliyoruz.
+      const lower = text.toLowerCase();
+      for (const t of tokens){
+        if (!t) continue;
+        const i = lower.indexOf(t);
+        if (i >= 0){
+          const a = escapeHtml(text.slice(0,i));
+          const b = escapeHtml(text.slice(i, i+t.length));
+          const c = escapeHtml(text.slice(i+t.length));
+          out = a + "<mark>" + b + "</mark>" + c;
+          break;
+        }
+      }
+      return out;
+    }
+
+    // --- elements
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    const openSidebarBtn = document.getElementById("openSidebar");
+    const closeSidebarBtn = document.getElementById("closeSidebar");
+    const navEl = document.getElementById("nav");
+    const searchEl = document.getElementById("search");
+    const clearSearchBtn = document.getElementById("clearSearch");
+    const searchMeta = document.getElementById("searchMeta");
+
+    const viewer = document.getElementById("viewer");
+    const loading = document.getElementById("loading");
+    const docTitleEl = document.getElementById("docTitle");
+    const openNewTab = document.getElementById("openNewTab");
+    const copyLinkBtn = document.getElementById("copyLink");
+
+    // --- build data from template list
+    const tpl = document.getElementById("sourceList");
+    const temp = document.createElement("div");
+    temp.innerHTML = tpl.innerHTML;
+    const srcUl = temp.querySelector("ul");
+    const rawGroups = Array.from(srcUl ? srcUl.children : []);
+
+    const groups = rawGroups.map(li => {
+      const strong = li.querySelector("strong");
+      const label = (strong ? strong.textContent : li.firstChild?.textContent || "").trim();
+      const no = getLeadingNumber(label);
+
+      const links = Array.from(li.querySelectorAll(":scope > ul > li > a")).map(a => {
+        const title = (a.textContent || "").trim();
+        const href = a.getAttribute("href") || "#";
+        return {
+          title,
+          href,
+          norm: norm(label + " " + title + " " + href)
+        };
+      });
+
+      return { label, no, links };
+    });
+
+    // Sort groups by leading number (01..), then label
+    groups.sort((a,b) => {
+      const an = (a.no == null) ? 9999 : a.no;
+      const bn = (b.no == null) ? 9999 : b.no;
+      if (an !== bn) return an - bn;
+      return a.label.localeCompare(b.label, "tr");
+    });
+
+    // Optional: keep links stable but ensure deterministic order
+    for (const g of groups){
+      g.links.sort((x,y) => x.title.localeCompare(y.title, "tr"));
+    }
+
+    // Build DOM
+    const linkByHref = new Map();
+    const linkMetaByHref = new Map();
+
+    function buildNav() {
+      navEl.innerHTML = "";
+      for (const g of groups){
+        const details = document.createElement("details");
+        details.className = "group";
+        details.open = true;
+
+        const summary = document.createElement("summary");
+        const no = (g.no == null) ? "" : String(g.no).padStart(2, "0");
+        summary.innerHTML = `
+          <span class="gNo">${no || "—"}</span>
+          <span class="gName">${escapeHtml(g.label.replace(/^\s*\d+\s*/,"").trim() || g.label)}</span>
+          <span class="chev">▶</span>
+        `;
+        details.appendChild(summary);
+
+        const ul = document.createElement("ul");
+        ul.className = "docList";
+
+        for (const d of g.links){
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          a.className = "docLink";
+          a.href = d.href;
+          a.textContent = d.title;
+          a.addEventListener("click", (e) => {
+            e.preventDefault();
+            openDoc(d.href, d.title);
+            closeSidebarIfMobile();
+          });
+
+          li.appendChild(a);
+          ul.appendChild(li);
+
+          linkByHref.set(d.href, a);
+          linkMetaByHref.set(d.href, { group: g.label, title: d.title });
+        }
+
+        details.appendChild(ul);
+        navEl.appendChild(details);
+      }
+
+      updateSearchMeta();
+    }
+
+    buildNav();
+
+    // --- iframe open
+    let currentHref = null;
+
+    function showLoading(on) {
+      loading.classList.toggle("on", !!on);
+    }
+
+    function setActive(href) {
+      // remove previous
+      document.querySelectorAll(".docLink.active").forEach(a => a.classList.remove("active"));
+      const a = linkByHref.get(href);
+      if (a) a.classList.add("active");
+    }
+
+    function openDoc(href, title) {
+      if (!href || href === "#") return;
+      currentHref = href;
+
+      docTitleEl.textContent = title || href;
+      openNewTab.href = href;
+
+      setActive(href);
+
+      showLoading(true);
+      viewer.src = href;
+
+      // Deep link
+      const hash = encodeURIComponent(href);
+      if (location.hash !== "#" + hash) {
+        history.replaceState(null, "", "#" + hash);
+      }
+    }
+
+    viewer.addEventListener("load", () => showLoading(false));
+    viewer.addEventListener("error", () => showLoading(false));
+
+    // Restore from hash on load
+    (function restoreFromHash(){
+      const h = (location.hash || "").slice(1);
+      if (!h) return;
+      const href = decodeURIComponent(h);
+      const meta = linkMetaByHref.get(href);
+      openDoc(href, meta ? meta.title : href);
+    })();
+
+    // --- search
+    function getTokens() {
+      const q = norm(searchEl.value);
+      return q ? q.split(" ").filter(Boolean) : [];
+    }
+
+    function updateSearchMeta(countVisible = null, total = null) {
+      if (countVisible == null || total == null) {
+        // compute quickly
+        const allLinks = navEl.querySelectorAll(".docLink");
+        const visible = Array.from(allLinks).filter(a => !a.closest("li")?.classList.contains("hidden")).length;
+        searchMeta.textContent = `Toplam: ${allLinks.length}`;
+        return;
+      }
+      if (!searchEl.value.trim()) {
+        searchMeta.textContent = `Toplam: ${total}`;
+      } else {
+        searchMeta.textContent = `${countVisible} sonuç`;
+      }
+    }
+
+    function applySearch() {
+      const tokens = getTokens();
+      const groupsEls = Array.from(navEl.querySelectorAll(".group"));
+      const allLinks = Array.from(navEl.querySelectorAll(".docLink"));
+
+      // reset highlights
+      allLinks.forEach(a => {
+        a.innerHTML = escapeHtml(a.textContent);
+        a.parentElement.classList.remove("hidden");
+      });
+      groupsEls.forEach(g => g.classList.remove("hidden"));
+
+      if (!tokens.length) {
+        groupsEls.forEach(d => d.open = true);
+        updateSearchMeta(allLinks.length, allLinks.length);
+        return;
+      }
+
+      let visibleCount = 0;
+
+      for (const a of allLinks){
+        const href = a.getAttribute("href") || "";
+        const meta = linkMetaByHref.get(href);
+        const hay = norm((meta?.group || "") + " " + (meta?.title || "") + " " + href);
+        const ok = tokens.every(t => hay.includes(t));
+        if (!ok) {
+          a.parentElement.classList.add("hidden");
+        } else {
+          visibleCount++;
+          a.innerHTML = highlight(a.textContent, tokens);
+        }
+      }
+
+      // hide empty groups
+      for (const details of groupsEls){
+        const anyVisible = !!details.querySelector("li:not(.hidden) .docLink");
+        if (!anyVisible) {
+          details.classList.add("hidden");
+        } else {
+          details.open = true; // aramada aç
+        }
+      }
+
+      updateSearchMeta(visibleCount, allLinks.length);
+    }
+
+    // CSS helper class
+    const st = document.createElement("style");
+    st.textContent = `.hidden{ display:none !important; }`;
+    document.head.appendChild(st);
+
+    let searchTimer = null;
+    searchEl.addEventListener("input", () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(applySearch, 120);
+    });
+
+    clearSearchBtn.addEventListener("click", () => {
+      searchEl.value = "";
+      applySearch();
+      searchEl.focus();
+    });
+
+    // / ile aramaya odaklan
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "/" && document.activeElement !== searchEl) {
+        e.preventDefault();
+        openSidebarIfMobile();
+        searchEl.focus();
+      }
+      if (e.key === "Escape") {
+        if (document.activeElement === searchEl) {
+          searchEl.blur();
+        }
+        closeSidebarIfMobile();
+      }
+    });
+
+    // --- mobile sidebar
+    function openSidebarIfMobile(){
+      if (window.matchMedia("(max-width: 780px)").matches){
+        sidebar.classList.add("open");
+        overlay.classList.add("on");
+      }
+    }
+    function closeSidebarIfMobile(){
+      sidebar.classList.remove("open");
+      overlay.classList.remove("on");
+    }
+
+    openSidebarBtn.addEventListener("click", openSidebarIfMobile);
+    closeSidebarBtn.addEventListener("click", closeSidebarIfMobile);
+    overlay.addEventListener("click", closeSidebarIfMobile);
+
+    // default open sidebar on desktop
+    (function initSidebar(){
+      if (!window.matchMedia("(max-width: 780px)").matches){
+        sidebar.classList.remove("open");
+        overlay.classList.remove("on");
+      }
+    })();
+
+    // --- copy link
+    copyLinkBtn.addEventListener("click", async () => {
+      try{
+        const url = currentHref
+          ? (location.origin + location.pathname + "#" + encodeURIComponent(currentHref))
+          : location.href;
+        await navigator.clipboard.writeText(url);
+        copyLinkBtn.textContent = "Kopyalandı";
+        setTimeout(() => copyLinkBtn.textContent = "Kopyala", 900);
+      } catch {
+        // fallback
+        const url = currentHref
+          ? (location.origin + location.pathname + "#" + encodeURIComponent(currentHref))
+          : location.href;
+        prompt("Bağlantıyı kopyala:", url);
+      }
+    });
+
+    // --- initial meta text
+    (function initMeta(){
+      const all = navEl.querySelectorAll(".docLink").length;
+      searchMeta.textContent = `Toplam: ${all}`;
+    })();
+  </script>
+</body>
+</html>
