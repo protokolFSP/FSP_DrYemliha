@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Dr Yemliha FSP notları</title>
+  <meta name="description" content="Dr Yemliha FSP notları — doküman arşivi ve hızlı görüntüleyici." />
+  <style>
+    :root{
+      --bg:#ffffff;
+      --panel:#ffffff;
+      --text:#111;
+      --muted:#666;
+      --border:#e6e6e6;
+      --hover:#f7f7f7;
+      --blue:#2b7cff;
+      --blueSoft: rgba(43,124,255,.10);
+      --shadow: 0 10px 30px rgba(0,0,0,.10);
+    }
+    *{box-sizing:border-box;}
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
+      background:var(--bg);
+      overflow:hidden;
+    }
+    .app{
+      display:grid;
+      grid-template-columns: 340px 1fr;
+      height:100vh;
+    }
+
+    /* Sidebar */
+    #sidebar{
+      border-right:1px solid var(--border);
+      background:var(--panel);
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sideInner{ padding: 14px 12px 24px 12px; }
+    .brandRow{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; margin-bottom:10px;
+    }
+    .brand{
+      font-weight:800; font-size: 1.06rem; line-height:1.1;
+      color:#0b5fff;
+    }
+    .sideTools{
+      display:flex; gap:8px; align-items:center;
+    }
+    .btn{
+      border:1px solid #d8d8d8;
+      background:#fff;
+      height:34px;
+      padding:0 10px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-size:.92rem;
+    }
+    .btn:hover{ background:var(--hover); }
+    .btn.primary{ border-color: var(--blue); background: var(--blueSoft); }
+
+    .searchRow{ display:flex; gap:8px; margin: 8px 0 10px 0; }
+    #search{
+      flex:1 1 auto;
+      width:100%;
+      height:38px;
+      border:1px solid #d8d8d8;
+      border-radius: 12px;
+      padding: 0 12px;
+      font-size: 1rem;
+      outline:none;
+    }
+    #search:focus{ border-color: var(--blue); box-shadow: 0 0 0 3px rgba(43,124,255,.14); }
+    #resultCount{ color: var(--muted); font-size: .92rem; margin: 2px 2px 10px 2px; }
+
+    details.sec{ border:1px solid var(--border); border-radius: 14px; background:#fff; overflow:hidden; margin: 10px 0; }
+    details.sec.hidden{ display:none; }
+    summary{
+      list-style:none;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      cursor:pointer;
+      user-select:none;
+      background: #fbfbfb;
+      border-bottom:1px solid var(--border);
+    }
+    summary::-webkit-details-marker{display:none;}
+    details.sec[open] > summary{ background: #f6f8ff; }
+    .secNum{
+      display:inline-flex; align-items:center; justify-content:center;
+      min-width: 38px;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid #d8d8d8;
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+      color:#111;
+      background:#fff;
+      flex: 0 0 auto;
+    }
+    .secTitle{ font-weight: 650; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .secMeta{ margin-left:auto; color:var(--muted); font-size:.9rem; }
+    .secBody{ padding: 8px 8px 10px 8px; }
+    ul.subList{ margin:0; padding:0; list-style:none; }
+    li.docItem{ margin: 0; padding: 0; }
+    li.docItem.hidden{ display:none; }
+    a.docLink{
+      display:block;
+      padding: 9px 10px;
+      border-radius: 12px;
+      text-decoration:none;
+      color: var(--text);
+      line-height:1.15;
+    }
+    a.docLink:hover{ background: var(--hover); }
+    a.docLink.active{
+      background: var(--blueSoft);
+      box-shadow: 0 0 0 3px rgba(43,124,255,.16) inset;
+    }
+
+    /* Main viewer */
+    .main{
+      display:flex;
+      flex-direction:column;
+      height:100vh;
+      overflow:hidden;
+      background:#fff;
+    }
+    .mainHeader{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      height:54px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      background:#fff;
+      flex: 0 0 auto;
+    }
+    #menuBtn{
+      display:none;
+      width:42px; height:38px;
+      border-radius: 12px;
+      border: 1px solid #d8d8d8;
+      background:#fff;
+      cursor:pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+    #menuBtn:hover{ background: var(--hover); }
+    #docTitle{
+      font-weight: 650;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      flex: 1 1 auto;
+    }
+    .mainActions{ display:flex; gap:8px; flex:0 0 auto; }
+    .viewer{ position:relative; flex: 1 1 auto; overflow:hidden; background:#fff; }
+    #docFrame{ width:100%; height:100%; border:0; display:block; background:#fff; }
+
+    /* Custom mini scroll indicator (same-origin iframe) */
+    #scrollTrack{
+      position:absolute;
+      top: 8px;
+      bottom: 8px;
+      right: 8px;
+      width: 7px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.08);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .15s ease;
+    }
+    .viewer.showScroll #scrollTrack{ opacity: 1; pointer-events: auto; }
+    #scrollThumb{
+      position:absolute;
+      left:0; right:0;
+      top:0;
+      height: 36px;
+      border-radius: 999px;
+      background: rgba(43,124,255,.55);
+      transform: translateY(0);
+    }
+
+    /* Mobile: sidebar drawer */
+    #scrim{
+      display:none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.28);
+      z-index: 20;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .18s ease;
+    }
+    #scrim.on{ opacity:1; pointer-events:auto; }
+
+    @media (max-width: 900px){
+      .app{ grid-template-columns: 1fr; }
+      #menuBtn{ display:inline-flex; align-items:center; justify-content:center; }
+      #sidebar{
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: min(88vw, 360px);
+        transform: translateX(-105%);
+        transition: transform .18s ease;
+        z-index: 30;
+        box-shadow: var(--shadow);
+        border-right: 1px solid var(--border);
+      }
+      #sidebar.open{ transform: translateX(0); }
+      #scrim{ display:block; }
+      .mainHeader{ padding-left: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="scrim" aria-hidden="true"></div>
+
+  <div class="app">
+    <aside id="sidebar" aria-label="İçindekiler">
+      <div class="sideInner">
+        <div class="brandRow">
+          <div class="brand">Dr Yemliha FSP notları</div>
+          <div class="sideTools">
+            <button class="btn" id="collapseAllBtn" type="button" title="Hepsini kapat">−</button>
+            <button class="btn" id="expandAllBtn" type="button" title="Hepsini aç">＋</button>
+          </div>
+        </div>
+
+        <div class="searchRow">
+          <input id="search" type="search" placeholder="Arama… (ör: DM, PAVK, Vollsatz)" autocomplete="off" />
+          <button class="btn" id="clearBtn" type="button" title="Temizle">×</button>
+        </div>
+
+        <div id="resultCount">—</div>
+
+        <nav id="toc">
+<details class="sec" open data-sec="01">
+  <summary><span class="secNum">01</span><span class="secTitle">Anamnese Strüktur</span><span class="secMeta" data-secmeta="01"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="01_Anamnese_Strüktur_ACIKLAMALI_MÜNCHEN_FaeLLE.docx.html" data-label="ACIKLAMALI MÜNCHEN FaeLLE" data-search="01 Anamnese Strüktur ACIKLAMALI MÜNCHEN FaeLLE.docx 01_Anamnese_Strüktur_ACIKLAMALI_MÜNCHEN_FaeLLE.docx.html ACIKLAMALI MÜNCHEN FaeLLE" data-group="01 Anamnese Strüktur" data-sec="01">ACIKLAMALI MÜNCHEN FaeLLE</a></li>
+      <li class="docItem"><a class="docLink" href="01_Anamnese_Strüktur_ALLGEMEINE__ANAMNESE..docx.html" data-label="ALLGEMEINE ANAMNESE." data-search="01 Anamnese Strüktur ALLGEMEINE  ANAMNESE..docx 01_Anamnese_Strüktur_ALLGEMEINE__ANAMNESE..docx.html ALLGEMEINE ANAMNESE." data-group="01 Anamnese Strüktur" data-sec="01">ALLGEMEINE ANAMNESE.</a></li>
+      <li class="docItem"><a class="docLink" href="01_Anamnese_Strüktur_Unfallbeschreibungen_zur_distalen_Radiusfraktur.docx.html" data-label="Unfallbeschreibungen zur distalen Radiusfraktur" data-search="01 Anamnese Strüktur Unfallbeschreibungen zur distalen Radiusfraktur.docx 01_Anamnese_Strüktur_Unfallbeschreibungen_zur_distalen_Radiusfraktur.docx.html Unfallbeschreibungen zur distalen Radiusfraktur" data-group="01 Anamnese Strüktur" data-sec="01">Unfallbeschreibungen zur distalen Radiusfraktur</a></li>
+      <li class="docItem"><a class="docLink" href="01_Anamnese_Strüktur_Unfallhergang_Sprunggelenksfraktur.docx.html" data-label="Unfallhergang Sprunggelenksfraktur" data-search="01 Anamnese Strüktur Unfallhergang Sprunggelenksfraktur.docx 01_Anamnese_Strüktur_Unfallhergang_Sprunggelenksfraktur.docx.html Unfallhergang Sprunggelenksfraktur" data-group="01 Anamnese Strüktur" data-sec="01">Unfallhergang Sprunggelenksfraktur</a></li>
+      <li class="docItem"><a class="docLink" href="01_Anamnese_Strüktur_Unfall_Verben_Vollsatz.docx.html" data-label="Unfall Verben Vollsatz" data-search="01 Anamnese Strüktur Unfall Verben Vollsatz.docx 01_Anamnese_Strüktur_Unfall_Verben_Vollsatz.docx.html Unfall Verben Vollsatz" data-group="01 Anamnese Strüktur" data-sec="01">Unfall Verben Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="01_Anamnese_Strüktur_REDEMITTEL_DrGuntersFragen.docx.html" data-label="REDEMITTEL Dr Gunter Soruları" data-search="01 Anamnese Strüktur REDEMITTEL_DrGuntersFragen.docx 01_Anamnese_Strüktur_REDEMITTEL_DrGuntersFragen.docx.html REDEMITTEL Dr Gunter Soruları" data-group="01 Anamnese Strüktur" data-sec="01">REDEMITTEL Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_Anamnese_Strüktur_Anamnese_DrGuntersFragen.pdf.html" data-label="Anamnese Dr Gunter Soruları" data-search="01 Anamnese Strüktur Anamnese_DrGuntersFragen.pdf 01_Anamnese_Strüktur_Anamnese_DrGuntersFragen.pdf.html Anamnese Dr Gunter Soruları" data-group="01 Anamnese Strüktur" data-sec="01">Anamnese Dr Gunter Soruları</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" open data-sec="01">
+  <summary><span class="secNum">01</span><span class="secTitle">DrGuntersFragen</span><span class="secMeta" data-secmeta="01"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Angina_Pectoris_DrGuntersFragen.docx.html" data-label="Angina Pectoris Dr Gunter Soruları" data-search="01 DrGuntersFragen Angina Pectoris_DrGuntersFragen.docx 01_DrGuntersFragen_Angina_Pectoris_DrGuntersFragen.docx.html Angina Pectoris Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Angina Pectoris Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Asthma_DrGuntersFragen.docx.html" data-label="Asthma Dr Gunter Soruları" data-search="01 DrGuntersFragen Asthma_DrGuntersFragen.docx 01_DrGuntersFragen_Asthma_DrGuntersFragen.docx.html Asthma Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Asthma Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Cholezystolithiasis_DrGuntersFragen.docx.html" data-label="Cholezystolithiasis Dr Gunter Soruları" data-search="01 DrGuntersFragen Cholezystolithiasis_DrGuntersFragen.docx 01_DrGuntersFragen_Cholezystolithiasis_DrGuntersFragen.docx.html Cholezystolithiasis Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Cholezystolithiasis Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Enterokolitis_DrGuntersFragen.docx.html" data-label="Enterokolitis Dr Gunter Soruları" data-search="01 DrGuntersFragen Enterokolitis_DrGuntersFragen.docx 01_DrGuntersFragen_Enterokolitis_DrGuntersFragen.docx.html Enterokolitis Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Enterokolitis Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Epilepsie_DrGuntersFragen.docx.html" data-label="Epilepsie Dr Gunter Soruları" data-search="01 DrGuntersFragen Epilepsie_DrGuntersFragen.docx 01_DrGuntersFragen_Epilepsie_DrGuntersFragen.docx.html Epilepsie Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Epilepsie Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Handgelenksfraktur_+_Hüftgelenksdistorsion__DrGuntersFragen.docx.html" data-label="Handgelenksfraktur + Hüftgelenksdistorsion Dr Gunter Soruları" data-search="01 DrGuntersFragen Handgelenksfraktur + Hüftgelenksdistorsion _DrGuntersFragen.docx 01_DrGuntersFragen_Handgelenksfraktur_+_Hüftgelenksdistorsion__DrGuntersFragen.docx.html Handgelenksfraktur + Hüftgelenksdistorsion Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Handgelenksfraktur + Hüftgelenksdistorsion Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Handgelenksfraktur_+_Rippenfraktur_DrGuntersFragen.docx.html" data-label="Handgelenksfraktur + Rippenfraktur Dr Gunter Soruları" data-search="01 DrGuntersFragen Handgelenksfraktur + Rippenfraktur_DrGuntersFragen.docx 01_DrGuntersFragen_Handgelenksfraktur_+_Rippenfraktur_DrGuntersFragen.docx.html Handgelenksfraktur + Rippenfraktur Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Handgelenksfraktur + Rippenfraktur Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Herzinsuffizienz_DrGuntersFragen.docx.html" data-label="Herzinsuffizienz Dr Gunter Soruları" data-search="01 DrGuntersFragen Herzinsuffizienz_DrGuntersFragen.docx 01_DrGuntersFragen_Herzinsuffizienz_DrGuntersFragen.docx.html Herzinsuffizienz Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Herzinsuffizienz Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Hodgkin_DrGuntersFragen.docx.html" data-label="Hodgkin Dr Gunter Soruları" data-search="01 DrGuntersFragen Hodgkin_DrGuntersFragen.docx 01_DrGuntersFragen_Hodgkin_DrGuntersFragen.docx.html Hodgkin Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Hodgkin Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_HWS_DrGuntersFragen.docx.html" data-label="HWS Dr Gunter Soruları" data-search="01 DrGuntersFragen HWS_DrGuntersFragen.docx 01_DrGuntersFragen_HWS_DrGuntersFragen.docx.html HWS Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">HWS Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Hyperthyreose_DrGuntersFragen.docx.html" data-label="Hyperthyreose Dr Gunter Soruları" data-search="01 DrGuntersFragen Hyperthyreose_DrGuntersFragen.docx 01_DrGuntersFragen_Hyperthyreose_DrGuntersFragen.docx.html Hyperthyreose Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Hyperthyreose Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Hypoglykämie_DrGuntersFragen.docx.html" data-label="Hypoglykämie Dr Gunter Soruları" data-search="01 DrGuntersFragen Hypoglykämie_DrGuntersFragen.docx 01_DrGuntersFragen_Hypoglykämie_DrGuntersFragen.docx.html Hypoglykämie Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Hypoglykämie Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Hypothyreose_DrGuntersFragen.docx.html" data-label="Hypothyreose Dr Gunter Soruları" data-search="01 DrGuntersFragen Hypothyreose_DrGuntersFragen.docx 01_DrGuntersFragen_Hypothyreose_DrGuntersFragen.docx.html Hypothyreose Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Hypothyreose Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Infektiöse_Mononucleose_DrGuntersFragen.docx.html" data-label="Infektiöse Mononucleose Dr Gunter Soruları" data-search="01 DrGuntersFragen Infektiöse Mononucleose_DrGuntersFragen.docx 01_DrGuntersFragen_Infektiöse_Mononucleose_DrGuntersFragen.docx.html Infektiöse Mononucleose Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Infektiöse Mononucleose Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Kolonkarzinom_DrGuntersFragen.docx.html" data-label="Kolonkarzinom Dr Gunter Soruları" data-search="01 DrGuntersFragen Kolonkarzinom_DrGuntersFragen.docx 01_DrGuntersFragen_Kolonkarzinom_DrGuntersFragen.docx.html Kolonkarzinom Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Kolonkarzinom Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Leukaemie_DrGuntersFragen.docx.html" data-label="Leukaemie Dr Gunter Soruları" data-search="01 DrGuntersFragen Leukaemie_DrGuntersFragen.docx 01_DrGuntersFragen_Leukaemie_DrGuntersFragen.docx.html Leukaemie Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Leukaemie Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_LWS_DrGuntersFragen.docx.html" data-label="LWS Dr Gunter Soruları" data-search="01 DrGuntersFragen LWS_DrGuntersFragen.docx 01_DrGuntersFragen_LWS_DrGuntersFragen.docx.html LWS Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">LWS Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Migräne_DrGuntersFragen.docx.html" data-label="Migräne Dr Gunter Soruları" data-search="01 DrGuntersFragen Migräne_DrGuntersFragen.docx 01_DrGuntersFragen_Migräne_DrGuntersFragen.docx.html Migräne Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Migräne Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Milzruptur_DrGuntersFragen.docx.html" data-label="Milzruptur Dr Gunter Soruları" data-search="01 DrGuntersFragen Milzruptur_DrGuntersFragen.docx 01_DrGuntersFragen_Milzruptur_DrGuntersFragen.docx.html Milzruptur Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Milzruptur Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Nephrolithiasis_DrGuntersFragen.docx.html" data-label="Nephrolithiasis Dr Gunter Soruları" data-search="01 DrGuntersFragen Nephrolithiasis_DrGuntersFragen.docx 01_DrGuntersFragen_Nephrolithiasis_DrGuntersFragen.docx.html Nephrolithiasis Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Nephrolithiasis Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_OSG_DrGuntersFragen.docx.html" data-label="OSG Dr Gunter Soruları" data-search="01 DrGuntersFragen OSG_DrGuntersFragen.docx 01_DrGuntersFragen_OSG_DrGuntersFragen.docx.html OSG Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">OSG Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Ösophaguskarzinom_DrGuntersFragen.docx.html" data-label="Ösophaguskarzinom Dr Gunter Soruları" data-search="01 DrGuntersFragen Ösophaguskarzinom_DrGuntersFragen.docx 01_DrGuntersFragen_Ösophaguskarzinom_DrGuntersFragen.docx.html Ösophaguskarzinom Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Ösophaguskarzinom Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Patellafraktur_DrGuntersFragen.docx.html" data-label="Patellafraktur Dr Gunter Soruları" data-search="01 DrGuntersFragen Patellafraktur_DrGuntersFragen.docx 01_DrGuntersFragen_Patellafraktur_DrGuntersFragen.docx.html Patellafraktur Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Patellafraktur Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_pAVK_DrGuntersFragen.docx.html" data-label="pAVK Dr Gunter Soruları" data-search="01 DrGuntersFragen pAVK_DrGuntersFragen.docx 01_DrGuntersFragen_pAVK_DrGuntersFragen.docx.html pAVK Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">pAVK Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Pneumonie_DrGuntersFragen.docx.html" data-label="Pneumonie Dr Gunter Soruları" data-search="01 DrGuntersFragen Pneumonie_DrGuntersFragen.docx 01_DrGuntersFragen_Pneumonie_DrGuntersFragen.docx.html Pneumonie Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Pneumonie Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Polytrauma_DrGuntersFragen.docx.html" data-label="Polytrauma Dr Gunter Soruları" data-search="01 DrGuntersFragen Polytrauma_DrGuntersFragen.docx 01_DrGuntersFragen_Polytrauma_DrGuntersFragen.docx.html Polytrauma Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Polytrauma Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Pyelonephritis_DrGuntersFragen.docx.html" data-label="Pyelonephritis Dr Gunter Soruları" data-search="01 DrGuntersFragen Pyelonephritis_DrGuntersFragen.docx 01_DrGuntersFragen_Pyelonephritis_DrGuntersFragen.docx.html Pyelonephritis Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Pyelonephritis Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_REDEMITTEL_DrGuntersFragen.docx.html" data-label="REDEMITTEL Dr Gunter Soruları" data-search="01 DrGuntersFragen REDEMITTEL_DrGuntersFragen.docx 01_DrGuntersFragen_REDEMITTEL_DrGuntersFragen.docx.html REDEMITTEL Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">REDEMITTEL Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Tonsillitis__DrGuntersFragen.docx.html" data-label="Tonsillitis Dr Gunter Soruları" data-search="01 DrGuntersFragen Tonsillitis _DrGuntersFragen.docx 01_DrGuntersFragen_Tonsillitis__DrGuntersFragen.docx.html Tonsillitis Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Tonsillitis Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_TVT_DrGuntersFragen.docx.html" data-label="TVT Dr Gunter Soruları" data-search="01 DrGuntersFragen TVT_DrGuntersFragen.docx 01_DrGuntersFragen_TVT_DrGuntersFragen.docx.html TVT Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">TVT Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Ulcus_cruris_DrGuntersFragen.docx.html" data-label="Ulcus cruris Dr Gunter Soruları" data-search="01 DrGuntersFragen Ulcus cruris_DrGuntersFragen.docx 01_DrGuntersFragen_Ulcus_cruris_DrGuntersFragen.docx.html Ulcus cruris Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Ulcus cruris Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Ulcus_ventriculi_DrGuntersFragen.docx.html" data-label="Ulcus ventriculi Dr Gunter Soruları" data-search="01 DrGuntersFragen Ulcus ventriculi_DrGuntersFragen.docx 01_DrGuntersFragen_Ulcus_ventriculi_DrGuntersFragen.docx.html Ulcus ventriculi Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Ulcus ventriculi Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_DrGuntersFragen_Anamnese_DrGuntersFragen.pdf.html" data-label="Anamnese Dr Gunter Soruları" data-search="01 DrGuntersFragen Anamnese_DrGuntersFragen.pdf 01_DrGuntersFragen_Anamnese_DrGuntersFragen.pdf.html Anamnese Dr Gunter Soruları" data-group="01 DrGuntersFragen" data-sec="01">Anamnese Dr Gunter Soruları</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" open data-sec="01">
+  <summary><span class="secNum">01</span><span class="secTitle">Handgelenksfraktur + Rippenfraktur -C</span><span class="secMeta" data-secmeta="01"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="01_Handgelenksfraktur_+_Rippenfraktur_-C_1-Handgelenksfraktur_+_Rippenfraktur.docx.html" data-label="1-Handgelenksfraktur + Rippenfraktur" data-search="01 Handgelenksfraktur + Rippenfraktur -C 1-Handgelenksfraktur + Rippenfraktur.docx 01_Handgelenksfraktur_+_Rippenfraktur_-C_1-Handgelenksfraktur_+_Rippenfraktur.docx.html 1-Handgelenksfraktur + Rippenfraktur" data-group="01 Handgelenksfraktur + Rippenfraktur -C" data-sec="01">1-Handgelenksfraktur + Rippenfraktur</a></li>
+      <li class="docItem"><a class="docLink" href="01_Handgelenksfraktur_+_Rippenfraktur_-C_6-Unfallbeschreibungen_zur_distalen_Radiusfraktur.docx.html" data-label="6-Unfallbeschreibungen zur distalen Radiusfraktur" data-search="01 Handgelenksfraktur + Rippenfraktur -C 6-Unfallbeschreibungen zur distalen Radiusfraktur.docx 01_Handgelenksfraktur_+_Rippenfraktur_-C_6-Unfallbeschreibungen_zur_distalen_Radiusfraktur.docx.html 6-Unfallbeschreibungen zur distalen Radiusfraktur" data-group="01 Handgelenksfraktur + Rippenfraktur -C" data-sec="01">6-Unfallbeschreibungen zur distalen Radiusfraktur</a></li>
+      <li class="docItem"><a class="docLink" href="01_Handgelenksfraktur_+_Rippenfraktur_-C_Handgelenksfraktur_+_Rippenfraktur_bfz.docx.html" data-label="Handgelenksfraktur + Rippenfraktur bfz" data-search="01 Handgelenksfraktur + Rippenfraktur -C Handgelenksfraktur + Rippenfraktur bfz.docx 01_Handgelenksfraktur_+_Rippenfraktur_-C_Handgelenksfraktur_+_Rippenfraktur_bfz.docx.html Handgelenksfraktur + Rippenfraktur bfz" data-group="01 Handgelenksfraktur + Rippenfraktur -C" data-sec="01">Handgelenksfraktur + Rippenfraktur bfz</a></li>
+      <li class="docItem"><a class="docLink" href="01_Handgelenksfraktur_+_Rippenfraktur_-C_3-Handgelenksfraktur_+_Rippenfraktur_Brieff.docx.html" data-label="3-Handgelenksfraktur + Rippenfraktur Brieff" data-search="01 Handgelenksfraktur + Rippenfraktur -C 3-Handgelenksfraktur + Rippenfraktur Brieff.docx 01_Handgelenksfraktur_+_Rippenfraktur_-C_3-Handgelenksfraktur_+_Rippenfraktur_Brieff.docx.html 3-Handgelenksfraktur + Rippenfraktur Brieff" data-group="01 Handgelenksfraktur + Rippenfraktur -C" data-sec="01">3-Handgelenksfraktur + Rippenfraktur Brieff</a></li>
+      <li class="docItem"><a class="docLink" href="01_Handgelenksfraktur_+_Rippenfraktur_-C_2-Handgelenksfraktur_Rippen_Vollsatz.docx.html" data-label="2-Handgelenksfraktur Rippen Vollsatz" data-search="01 Handgelenksfraktur + Rippenfraktur -C 2-Handgelenksfraktur Rippen Vollsatz.docx 01_Handgelenksfraktur_+_Rippenfraktur_-C_2-Handgelenksfraktur_Rippen_Vollsatz.docx.html 2-Handgelenksfraktur Rippen Vollsatz" data-group="01 Handgelenksfraktur + Rippenfraktur -C" data-sec="01">2-Handgelenksfraktur Rippen Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="01_Handgelenksfraktur_+_Rippenfraktur_-C_Handgelenksfraktur_+_Rippenfraktur_DrGuntersFragen.docx.html" data-label="Handgelenksfraktur + Rippenfraktur Dr Gunter Soruları" data-search="01 Handgelenksfraktur + Rippenfraktur -C Handgelenksfraktur + Rippenfraktur_DrGuntersFragen.docx 01_Handgelenksfraktur_+_Rippenfraktur_-C_Handgelenksfraktur_+_Rippenfraktur_DrGuntersFragen.docx.html Handgelenksfraktur + Rippenfraktur Dr Gunter Soruları" data-group="01 Handgelenksfraktur + Rippenfraktur -C" data-sec="01">Handgelenksfraktur + Rippenfraktur Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="01_Handgelenksfraktur_+_Rippenfraktur_-C_5-Weiteres_vorgehen.docx.html" data-label="5-Weiteres vorgehen" data-search="01 Handgelenksfraktur + Rippenfraktur -C 5-Weiteres vorgehen.docx 01_Handgelenksfraktur_+_Rippenfraktur_-C_5-Weiteres_vorgehen.docx.html 5-Weiteres vorgehen" data-group="01 Handgelenksfraktur + Rippenfraktur -C" data-sec="01">5-Weiteres vorgehen</a></li>
+      <li class="docItem"><a class="docLink" href="01_Handgelenksfraktur_+_Rippenfraktur_-C_4-Ekran_Resmi_2024-08-20_18.48.47.png.html" data-label="4-Ekran Görüntüsü 2024-08-20 18.48.47" data-search="01 Handgelenksfraktur + Rippenfraktur -C 4-Ekran Resmi 2024-08-20 18.48.47.png 01_Handgelenksfraktur_+_Rippenfraktur_-C_4-Ekran_Resmi_2024-08-20_18.48.47.png.html 4-Ekran Görüntüsü 2024-08-20 18.48.47" data-group="01 Handgelenksfraktur + Rippenfraktur -C" data-sec="01">4-Ekran Görüntüsü 2024-08-20 18.48.47</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" open data-sec="02">
+  <summary><span class="secNum">02</span><span class="secTitle">Handgelenksfraktur + Hüftgelenksdistorsion-C</span><span class="secMeta" data-secmeta="02"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion_bfz.docx.html" data-label="Handgelenksfraktur + Hüftgelenksdistorsion bfz" data-search="02 Handgelenksfraktur + Hüftgelenksdistorsion-C Handgelenksfraktur + Hüftgelenksdistorsion bfz.docx 02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion_bfz.docx.html Handgelenksfraktur + Hüftgelenksdistorsion bfz" data-group="02 Handgelenksfraktur + Hüftgelenksdistorsion-C" data-sec="02">Handgelenksfraktur + Hüftgelenksdistorsion bfz</a></li>
+      <li class="docItem"><a class="docLink" href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion_Vollsatz.docx.html" data-label="Handgelenksfraktur + Hüftgelenksdistorsion Vollsatz" data-search="02 Handgelenksfraktur + Hüftgelenksdistorsion-C Handgelenksfraktur + Hüftgelenksdistorsion Vollsatz.docx 02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion_Vollsatz.docx.html Handgelenksfraktur + Hüftgelenksdistorsion Vollsatz" data-group="02 Handgelenksfraktur + Hüftgelenksdistorsion-C" data-sec="02">Handgelenksfraktur + Hüftgelenksdistorsion Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion__DrGuntersFragen.docx.html" data-label="Handgelenksfraktur + Hüftgelenksdistorsion Dr Gunter Soruları" data-search="02 Handgelenksfraktur + Hüftgelenksdistorsion-C Handgelenksfraktur + Hüftgelenksdistorsion _DrGuntersFragen.docx 02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion__DrGuntersFragen.docx.html Handgelenksfraktur + Hüftgelenksdistorsion Dr Gunter Soruları" data-group="02 Handgelenksfraktur + Hüftgelenksdistorsion-C" data-sec="02">Handgelenksfraktur + Hüftgelenksdistorsion Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_Rippen_Weiteres_Vorgehen_.docx.html" data-label="Handgelenksfraktur Rippen Devam / Yaklaşım" data-search="02 Handgelenksfraktur + Hüftgelenksdistorsion-C Handgelenksfraktur Rippen Weiteres Vorgehen .docx 02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_Rippen_Weiteres_Vorgehen_.docx.html Handgelenksfraktur Rippen Devam / Yaklaşım" data-group="02 Handgelenksfraktur + Hüftgelenksdistorsion-C" data-sec="02">Handgelenksfraktur Rippen Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Brief.png.html" data-label="Brief" data-search="02 Handgelenksfraktur + Hüftgelenksdistorsion-C Brief.png 02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Brief.png.html Brief" data-group="02 Handgelenksfraktur + Hüftgelenksdistorsion-C" data-sec="02">Brief</a></li>
+      <li class="docItem"><a class="docLink" href="02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion_Brief.png.html" data-label="Handgelenksfraktur + Hüftgelenksdistorsion Brief" data-search="02 Handgelenksfraktur + Hüftgelenksdistorsion-C Handgelenksfraktur + Hüftgelenksdistorsion Brief.png 02_Handgelenksfraktur_+_Hüftgelenksdistorsion-C_Handgelenksfraktur_+_Hüftgelenksdistorsion_Brief.png.html Handgelenksfraktur + Hüftgelenksdistorsion Brief" data-group="02 Handgelenksfraktur + Hüftgelenksdistorsion-C" data-sec="02">Handgelenksfraktur + Hüftgelenksdistorsion Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" open data-sec="03">
+  <summary><span class="secNum">03</span><span class="secTitle">OSG-C</span><span class="secMeta" data-secmeta="03"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="03_OSG-C_OSG_bfz.docx.html" data-label="OSG bfz" data-search="03 OSG-C OSG bfz.docx 03_OSG-C_OSG_bfz.docx.html OSG bfz" data-group="03 OSG-C" data-sec="03">OSG bfz</a></li>
+      <li class="docItem"><a class="docLink" href="03_OSG-C_OSG_Vollsatz.docx.html" data-label="OSG Vollsatz" data-search="03 OSG-C OSG Vollsatz.docx 03_OSG-C_OSG_Vollsatz.docx.html OSG Vollsatz" data-group="03 OSG-C" data-sec="03">OSG Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="03_OSG-C_OSG_DrGuntersFragen.docx.html" data-label="OSG Dr Gunter Soruları" data-search="03 OSG-C OSG_DrGuntersFragen.docx 03_OSG-C_OSG_DrGuntersFragen.docx.html OSG Dr Gunter Soruları" data-group="03 OSG-C" data-sec="03">OSG Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="03_OSG-C_Weiteres_Vorgehen_OSG.docx.html" data-label="Devam / Yaklaşım OSG" data-search="03 OSG-C Weiteres Vorgehen OSG.docx 03_OSG-C_Weiteres_Vorgehen_OSG.docx.html Devam / Yaklaşım OSG" data-group="03 OSG-C" data-sec="03">Devam / Yaklaşım OSG</a></li>
+      <li class="docItem"><a class="docLink" href="03_OSG-C_OSG_Brief_1.png.html" data-label="OSG Brief 1" data-search="03 OSG-C OSG Brief 1.png 03_OSG-C_OSG_Brief_1.png.html OSG Brief 1" data-group="03 OSG-C" data-sec="03">OSG Brief 1</a></li>
+      <li class="docItem"><a class="docLink" href="03_OSG-C_OSG_Brief.png.html" data-label="OSG Brief" data-search="03 OSG-C OSG Brief.png 03_OSG-C_OSG_Brief.png.html OSG Brief" data-group="03 OSG-C" data-sec="03">OSG Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" open data-sec="04">
+  <summary><span class="secNum">04</span><span class="secTitle">Patellafraktur-C</span><span class="secMeta" data-secmeta="04"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="04_Patellafraktur-C_Patellafraktur_bfz.docx.html" data-label="Patellafraktur bfz" data-search="04 Patellafraktur-C Patellafraktur bfz.docx 04_Patellafraktur-C_Patellafraktur_bfz.docx.html Patellafraktur bfz" data-group="04 Patellafraktur-C" data-sec="04">Patellafraktur bfz</a></li>
+      <li class="docItem"><a class="docLink" href="04_Patellafraktur-C_Patellafraktur_Vollsatz.docx.html" data-label="Patellafraktur Vollsatz" data-search="04 Patellafraktur-C Patellafraktur Vollsatz.docx 04_Patellafraktur-C_Patellafraktur_Vollsatz.docx.html Patellafraktur Vollsatz" data-group="04 Patellafraktur-C" data-sec="04">Patellafraktur Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="04_Patellafraktur-C_Patellafraktur_DrGuntersFragen.docx.html" data-label="Patellafraktur Dr Gunter Soruları" data-search="04 Patellafraktur-C Patellafraktur_DrGuntersFragen.docx 04_Patellafraktur-C_Patellafraktur_DrGuntersFragen.docx.html Patellafraktur Dr Gunter Soruları" data-group="04 Patellafraktur-C" data-sec="04">Patellafraktur Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="04_Patellafraktur-C_Patellafraktur_Weiteres_Vorgehen.docx.html" data-label="Patellafraktur Devam / Yaklaşım" data-search="04 Patellafraktur-C Patellafraktur Weiteres Vorgehen.docx 04_Patellafraktur-C_Patellafraktur_Weiteres_Vorgehen.docx.html Patellafraktur Devam / Yaklaşım" data-group="04 Patellafraktur-C" data-sec="04">Patellafraktur Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="04_Patellafraktur-C_Patellafraktur_Brief_1.png.html" data-label="Patellafraktur Brief 1" data-search="04 Patellafraktur-C Patellafraktur Brief 1.png 04_Patellafraktur-C_Patellafraktur_Brief_1.png.html Patellafraktur Brief 1" data-group="04 Patellafraktur-C" data-sec="04">Patellafraktur Brief 1</a></li>
+      <li class="docItem"><a class="docLink" href="04_Patellafraktur-C_Patellafraktur_Brief.png.html" data-label="Patellafraktur Brief" data-search="04 Patellafraktur-C Patellafraktur Brief.png 04_Patellafraktur-C_Patellafraktur_Brief.png.html Patellafraktur Brief" data-group="04 Patellafraktur-C" data-sec="04">Patellafraktur Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="05">
+  <summary><span class="secNum">05</span><span class="secTitle">Polytrauma-C</span><span class="secMeta" data-secmeta="05"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="05_Polytrauma-C_Polytrauma_bfz.docx.html" data-label="Polytrauma bfz" data-search="05 Polytrauma-C Polytrauma bfz.docx 05_Polytrauma-C_Polytrauma_bfz.docx.html Polytrauma bfz" data-group="05 Polytrauma-C" data-sec="05">Polytrauma bfz</a></li>
+      <li class="docItem"><a class="docLink" href="05_Polytrauma-C_Polytrauma_Vollsatz.docx.html" data-label="Polytrauma Vollsatz" data-search="05 Polytrauma-C Polytrauma Vollsatz.docx 05_Polytrauma-C_Polytrauma_Vollsatz.docx.html Polytrauma Vollsatz" data-group="05 Polytrauma-C" data-sec="05">Polytrauma Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="05_Polytrauma-C_Polytrauma_DrGuntersFragen.docx.html" data-label="Polytrauma Dr Gunter Soruları" data-search="05 Polytrauma-C Polytrauma_DrGuntersFragen.docx 05_Polytrauma-C_Polytrauma_DrGuntersFragen.docx.html Polytrauma Dr Gunter Soruları" data-group="05 Polytrauma-C" data-sec="05">Polytrauma Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="05_Polytrauma-C_Polytrauma_Weiteres_Vorgehen.docx.html" data-label="Polytrauma Devam / Yaklaşım" data-search="05 Polytrauma-C Polytrauma Weiteres Vorgehen.docx 05_Polytrauma-C_Polytrauma_Weiteres_Vorgehen.docx.html Polytrauma Devam / Yaklaşım" data-group="05 Polytrauma-C" data-sec="05">Polytrauma Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="05_Polytrauma-C_Ekran_Resmi_2024-08-24_01.46.26.png.html" data-label="Ekran Görüntüsü 2024-08-24 01.46.26" data-search="05 Polytrauma-C Ekran Resmi 2024-08-24 01.46.26.png 05_Polytrauma-C_Ekran_Resmi_2024-08-24_01.46.26.png.html Ekran Görüntüsü 2024-08-24 01.46.26" data-group="05 Polytrauma-C" data-sec="05">Ekran Görüntüsü 2024-08-24 01.46.26</a></li>
+      <li class="docItem"><a class="docLink" href="05_Polytrauma-C_Polytrauma_Brief.png.html" data-label="Polytrauma Brief" data-search="05 Polytrauma-C Polytrauma Brief.png 05_Polytrauma-C_Polytrauma_Brief.png.html Polytrauma Brief" data-group="05 Polytrauma-C" data-sec="05">Polytrauma Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="06">
+  <summary><span class="secNum">06</span><span class="secTitle">Milzruptur-C</span><span class="secMeta" data-secmeta="06"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="06_Milzruptur-C_Milzruptur_bfz.docx.html" data-label="Milzruptur bfz" data-search="06 Milzruptur-C Milzruptur bfz.docx 06_Milzruptur-C_Milzruptur_bfz.docx.html Milzruptur bfz" data-group="06 Milzruptur-C" data-sec="06">Milzruptur bfz</a></li>
+      <li class="docItem"><a class="docLink" href="06_Milzruptur-C_Unfallhergang_Inlinerunfall_mit_Milzruptur.docx.html" data-label="Unfallhergang Inlinerunfall mit Milzruptur" data-search="06 Milzruptur-C Unfallhergang Inlinerunfall mit Milzruptur.docx 06_Milzruptur-C_Unfallhergang_Inlinerunfall_mit_Milzruptur.docx.html Unfallhergang Inlinerunfall mit Milzruptur" data-group="06 Milzruptur-C" data-sec="06">Unfallhergang Inlinerunfall mit Milzruptur</a></li>
+      <li class="docItem"><a class="docLink" href="06_Milzruptur-C_Milzruptur_Vollsatz.docx.html" data-label="Milzruptur Vollsatz" data-search="06 Milzruptur-C Milzruptur Vollsatz.docx 06_Milzruptur-C_Milzruptur_Vollsatz.docx.html Milzruptur Vollsatz" data-group="06 Milzruptur-C" data-sec="06">Milzruptur Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="06_Milzruptur-C_Milzruptur_DrGuntersFragen.docx.html" data-label="Milzruptur Dr Gunter Soruları" data-search="06 Milzruptur-C Milzruptur_DrGuntersFragen.docx 06_Milzruptur-C_Milzruptur_DrGuntersFragen.docx.html Milzruptur Dr Gunter Soruları" data-group="06 Milzruptur-C" data-sec="06">Milzruptur Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="06_Milzruptur-C_Milzruptur_Weiteres_Vorgehen.docx.html" data-label="Milzruptur Devam / Yaklaşım" data-search="06 Milzruptur-C Milzruptur Weiteres Vorgehen.docx 06_Milzruptur-C_Milzruptur_Weiteres_Vorgehen.docx.html Milzruptur Devam / Yaklaşım" data-group="06 Milzruptur-C" data-sec="06">Milzruptur Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="06_Milzruptur-C_Milzruptur_Brief.png.html" data-label="Milzruptur Brief" data-search="06 Milzruptur-C Milzruptur Brief.png 06_Milzruptur-C_Milzruptur_Brief.png.html Milzruptur Brief" data-group="06 Milzruptur-C" data-sec="06">Milzruptur Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="07">
+  <summary><span class="secNum">07</span><span class="secTitle">Hyperthyreose-C</span><span class="secMeta" data-secmeta="07"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="07_Hyperthyreose-C__Hyperthyreose_bfz.docx.html" data-label="Hyperthyreose bfz" data-search="07 Hyperthyreose-C Hyperthyreose bfz.docx 07_Hyperthyreose-C__Hyperthyreose_bfz.docx.html Hyperthyreose bfz" data-group="07 Hyperthyreose-C" data-sec="07">Hyperthyreose bfz</a></li>
+      <li class="docItem"><a class="docLink" href="07_Hyperthyreose-C__Hyperthyreose_Brief.docx.html" data-label="Hyperthyreose Brief" data-search="07 Hyperthyreose-C Hyperthyreose Brief.docx 07_Hyperthyreose-C__Hyperthyreose_Brief.docx.html Hyperthyreose Brief" data-group="07 Hyperthyreose-C" data-sec="07">Hyperthyreose Brief</a></li>
+      <li class="docItem"><a class="docLink" href="07_Hyperthyreose-C__Hyperthyreose_Vollsatz.docx.html" data-label="Hyperthyreose Vollsatz" data-search="07 Hyperthyreose-C Hyperthyreose Vollsatz.docx 07_Hyperthyreose-C__Hyperthyreose_Vollsatz.docx.html Hyperthyreose Vollsatz" data-group="07 Hyperthyreose-C" data-sec="07">Hyperthyreose Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="07_Hyperthyreose-C__Hyperthyreose_DrGuntersFragen.docx.html" data-label="Hyperthyreose Dr Gunter Soruları" data-search="07 Hyperthyreose-C Hyperthyreose_DrGuntersFragen.docx 07_Hyperthyreose-C__Hyperthyreose_DrGuntersFragen.docx.html Hyperthyreose Dr Gunter Soruları" data-group="07 Hyperthyreose-C" data-sec="07">Hyperthyreose Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="07_Hyperthyreose-C__Hyperthyreose_Weiteres_Vorgehen.docx.html" data-label="Hyperthyreose Devam / Yaklaşım" data-search="07 Hyperthyreose-C Hyperthyreose Weiteres Vorgehen.docx 07_Hyperthyreose-C__Hyperthyreose_Weiteres_Vorgehen.docx.html Hyperthyreose Devam / Yaklaşım" data-group="07 Hyperthyreose-C" data-sec="07">Hyperthyreose Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="07_Hyperthyreose-C__Ekran_Resmi_2024-08-24_01.49.47.png.html" data-label="Ekran Görüntüsü 2024-08-24 01.49.47" data-search="07 Hyperthyreose-C Ekran Resmi 2024-08-24 01.49.47.png 07_Hyperthyreose-C__Ekran_Resmi_2024-08-24_01.49.47.png.html Ekran Görüntüsü 2024-08-24 01.49.47" data-group="07 Hyperthyreose-C" data-sec="07">Ekran Görüntüsü 2024-08-24 01.49.47</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="08">
+  <summary><span class="secNum">08</span><span class="secTitle">Hypothyreose-C</span><span class="secMeta" data-secmeta="08"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="08_Hypothyreose-C_Hypothyreose_bfz.docx.html" data-label="Hypothyreose bfz" data-search="08 Hypothyreose-C Hypothyreose bfz.docx 08_Hypothyreose-C_Hypothyreose_bfz.docx.html Hypothyreose bfz" data-group="08 Hypothyreose-C" data-sec="08">Hypothyreose bfz</a></li>
+      <li class="docItem"><a class="docLink" href="08_Hypothyreose-C_Hypothyreose_Vollsatz.docx.html" data-label="Hypothyreose Vollsatz" data-search="08 Hypothyreose-C Hypothyreose Vollsatz.docx 08_Hypothyreose-C_Hypothyreose_Vollsatz.docx.html Hypothyreose Vollsatz" data-group="08 Hypothyreose-C" data-sec="08">Hypothyreose Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="08_Hypothyreose-C_Hypothyreose_DrGuntersFragen.docx.html" data-label="Hypothyreose Dr Gunter Soruları" data-search="08 Hypothyreose-C Hypothyreose_DrGuntersFragen.docx 08_Hypothyreose-C_Hypothyreose_DrGuntersFragen.docx.html Hypothyreose Dr Gunter Soruları" data-group="08 Hypothyreose-C" data-sec="08">Hypothyreose Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="08_Hypothyreose-C_Hypothyreose_Weiteres_Vorgehen.docx.html" data-label="Hypothyreose Devam / Yaklaşım" data-search="08 Hypothyreose-C Hypothyreose Weiteres Vorgehen.docx 08_Hypothyreose-C_Hypothyreose_Weiteres_Vorgehen.docx.html Hypothyreose Devam / Yaklaşım" data-group="08 Hypothyreose-C" data-sec="08">Hypothyreose Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="08_Hypothyreose-C_Hypothyreose__Brief_1.png.html" data-label="Hypothyreose Brief 1" data-search="08 Hypothyreose-C Hypothyreose  Brief 1.png 08_Hypothyreose-C_Hypothyreose__Brief_1.png.html Hypothyreose Brief 1" data-group="08 Hypothyreose-C" data-sec="08">Hypothyreose Brief 1</a></li>
+      <li class="docItem"><a class="docLink" href="08_Hypothyreose-C_Hypothyreose_Brief.png.html" data-label="Hypothyreose Brief" data-search="08 Hypothyreose-C Hypothyreose Brief.png 08_Hypothyreose-C_Hypothyreose_Brief.png.html Hypothyreose Brief" data-group="08 Hypothyreose-C" data-sec="08">Hypothyreose Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="09">
+  <summary><span class="secNum">09</span><span class="secTitle">Hypoglykaemie-C</span><span class="secMeta" data-secmeta="09"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="09_Hypoglykaemie-C_Hypoglykaemie_bfz.docx.html" data-label="Hypoglykaemie bfz" data-search="09 Hypoglykaemie-C Hypoglykaemie bfz.docx 09_Hypoglykaemie-C_Hypoglykaemie_bfz.docx.html Hypoglykaemie bfz" data-group="09 Hypoglykaemie-C" data-sec="09">Hypoglykaemie bfz</a></li>
+      <li class="docItem"><a class="docLink" href="09_Hypoglykaemie-C_Hypoglykaemie_Brief.docx.html" data-label="Hypoglykaemie Brief" data-search="09 Hypoglykaemie-C Hypoglykaemie Brief.docx 09_Hypoglykaemie-C_Hypoglykaemie_Brief.docx.html Hypoglykaemie Brief" data-group="09 Hypoglykaemie-C" data-sec="09">Hypoglykaemie Brief</a></li>
+      <li class="docItem"><a class="docLink" href="09_Hypoglykaemie-C_Hypoglykaemie_Brieff.docx.html" data-label="Hypoglykaemie Brieff" data-search="09 Hypoglykaemie-C Hypoglykaemie Brieff.docx 09_Hypoglykaemie-C_Hypoglykaemie_Brieff.docx.html Hypoglykaemie Brieff" data-group="09 Hypoglykaemie-C" data-sec="09">Hypoglykaemie Brieff</a></li>
+      <li class="docItem"><a class="docLink" href="09_Hypoglykaemie-C_Hypoglykaemie_Vollsatz.docx.html" data-label="Hypoglykaemie Vollsatz" data-search="09 Hypoglykaemie-C Hypoglykaemie Vollsatz.docx 09_Hypoglykaemie-C_Hypoglykaemie_Vollsatz.docx.html Hypoglykaemie Vollsatz" data-group="09 Hypoglykaemie-C" data-sec="09">Hypoglykaemie Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="09_Hypoglykaemie-C_Hypoglykaemie_DrGuntersFragen.docx.html" data-label="Hypoglykaemie Dr Gunter Soruları" data-search="09 Hypoglykaemie-C Hypoglykaemie_DrGuntersFragen.docx 09_Hypoglykaemie-C_Hypoglykaemie_DrGuntersFragen.docx.html Hypoglykaemie Dr Gunter Soruları" data-group="09 Hypoglykaemie-C" data-sec="09">Hypoglykaemie Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="09_Hypoglykaemie-C_Hypoglykaemie_Weiteres_vorgehen.docx.html" data-label="Hypoglykaemie Weiteres vorgehen" data-search="09 Hypoglykaemie-C Hypoglykaemie Weiteres vorgehen.docx 09_Hypoglykaemie-C_Hypoglykaemie_Weiteres_vorgehen.docx.html Hypoglykaemie Weiteres vorgehen" data-group="09 Hypoglykaemie-C" data-sec="09">Hypoglykaemie Weiteres vorgehen</a></li>
+      <li class="docItem"><a class="docLink" href="09_Hypoglykaemie-C_Ekran_Resmi_2024-08-24_01.54.09.png.html" data-label="Ekran Görüntüsü 2024-08-24 01.54.09" data-search="09 Hypoglykaemie-C Ekran Resmi 2024-08-24 01.54.09.png 09_Hypoglykaemie-C_Ekran_Resmi_2024-08-24_01.54.09.png.html Ekran Görüntüsü 2024-08-24 01.54.09" data-group="09 Hypoglykaemie-C" data-sec="09">Ekran Görüntüsü 2024-08-24 01.54.09</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="10">
+  <summary><span class="secNum">10</span><span class="secTitle">HWS-Diskusprolaps-C</span><span class="secMeta" data-secmeta="10"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="10_HWS-Diskusprolaps-C_HWS-Diskusprolaps_bfz.docx.html" data-label="HWS-Diskusprolaps bfz" data-search="10 HWS-Diskusprolaps-C HWS-Diskusprolaps bfz.docx 10_HWS-Diskusprolaps-C_HWS-Diskusprolaps_bfz.docx.html HWS-Diskusprolaps bfz" data-group="10 HWS-Diskusprolaps-C" data-sec="10">HWS-Diskusprolaps bfz</a></li>
+      <li class="docItem"><a class="docLink" href="10_HWS-Diskusprolaps-C_HWS-Diskusprolaps_Vollsatz.docx.html" data-label="HWS-Diskusprolaps Vollsatz" data-search="10 HWS-Diskusprolaps-C HWS-Diskusprolaps Vollsatz.docx 10_HWS-Diskusprolaps-C_HWS-Diskusprolaps_Vollsatz.docx.html HWS-Diskusprolaps Vollsatz" data-group="10 HWS-Diskusprolaps-C" data-sec="10">HWS-Diskusprolaps Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="10_HWS-Diskusprolaps-C_HWS_DrGuntersFragen.docx.html" data-label="HWS Dr Gunter Soruları" data-search="10 HWS-Diskusprolaps-C HWS_DrGuntersFragen.docx 10_HWS-Diskusprolaps-C_HWS_DrGuntersFragen.docx.html HWS Dr Gunter Soruları" data-group="10 HWS-Diskusprolaps-C" data-sec="10">HWS Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="10_HWS-Diskusprolaps-C_HWS_Weiteres_Vorgehen.docx.html" data-label="HWS Devam / Yaklaşım" data-search="10 HWS-Diskusprolaps-C HWS Weiteres Vorgehen.docx 10_HWS-Diskusprolaps-C_HWS_Weiteres_Vorgehen.docx.html HWS Devam / Yaklaşım" data-group="10 HWS-Diskusprolaps-C" data-sec="10">HWS Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="10_HWS-Diskusprolaps-C_Ekran_Resmi_2024-08-24_02.12.58.png.html" data-label="Ekran Görüntüsü 2024-08-24 02.12.58" data-search="10 HWS-Diskusprolaps-C Ekran Resmi 2024-08-24 02.12.58.png 10_HWS-Diskusprolaps-C_Ekran_Resmi_2024-08-24_02.12.58.png.html Ekran Görüntüsü 2024-08-24 02.12.58" data-group="10 HWS-Diskusprolaps-C" data-sec="10">Ekran Görüntüsü 2024-08-24 02.12.58</a></li>
+      <li class="docItem"><a class="docLink" href="10_HWS-Diskusprolaps-C_HWS-Diskusprolaps_-_Brief.png.html" data-label="HWS-Diskusprolaps - Brief" data-search="10 HWS-Diskusprolaps-C HWS-Diskusprolaps - Brief.png 10_HWS-Diskusprolaps-C_HWS-Diskusprolaps_-_Brief.png.html HWS-Diskusprolaps - Brief" data-group="10 HWS-Diskusprolaps-C" data-sec="10">HWS-Diskusprolaps - Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="11">
+  <summary><span class="secNum">11</span><span class="secTitle">LWS Diskusprolaps-C</span><span class="secMeta" data-secmeta="11"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="11_LWS_Diskusprolaps-C_LWS_Diskusprolaps_bfz.docx.html" data-label="LWS Diskusprolaps bfz" data-search="11 LWS Diskusprolaps-C LWS Diskusprolaps bfz.docx 11_LWS_Diskusprolaps-C_LWS_Diskusprolaps_bfz.docx.html LWS Diskusprolaps bfz" data-group="11 LWS Diskusprolaps-C" data-sec="11">LWS Diskusprolaps bfz</a></li>
+      <li class="docItem"><a class="docLink" href="11_LWS_Diskusprolaps-C_LWS_Diskusprolaps_Brieff.docx.html" data-label="LWS Diskusprolaps Brieff" data-search="11 LWS Diskusprolaps-C LWS Diskusprolaps Brieff.docx 11_LWS_Diskusprolaps-C_LWS_Diskusprolaps_Brieff.docx.html LWS Diskusprolaps Brieff" data-group="11 LWS Diskusprolaps-C" data-sec="11">LWS Diskusprolaps Brieff</a></li>
+      <li class="docItem"><a class="docLink" href="11_LWS_Diskusprolaps-C_Diskusprolaps_Vollsatz-C.docx.html" data-label="Diskusprolaps Vollsatz-C" data-search="11 LWS Diskusprolaps-C Diskusprolaps Vollsatz-C.docx 11_LWS_Diskusprolaps-C_Diskusprolaps_Vollsatz-C.docx.html Diskusprolaps Vollsatz-C" data-group="11 LWS Diskusprolaps-C" data-sec="11">Diskusprolaps Vollsatz-C</a></li>
+      <li class="docItem"><a class="docLink" href="11_LWS_Diskusprolaps-C_LWS_Diskusprolaps__Vollsatz.docx.html" data-label="LWS Diskusprolaps Vollsatz" data-search="11 LWS Diskusprolaps-C LWS Diskusprolaps  Vollsatz.docx 11_LWS_Diskusprolaps-C_LWS_Diskusprolaps__Vollsatz.docx.html LWS Diskusprolaps Vollsatz" data-group="11 LWS Diskusprolaps-C" data-sec="11">LWS Diskusprolaps Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="11_LWS_Diskusprolaps-C_LWS_DrGuntersFragen.docx.html" data-label="LWS Dr Gunter Soruları" data-search="11 LWS Diskusprolaps-C LWS_DrGuntersFragen.docx 11_LWS_Diskusprolaps-C_LWS_DrGuntersFragen.docx.html LWS Dr Gunter Soruları" data-group="11 LWS Diskusprolaps-C" data-sec="11">LWS Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="11_LWS_Diskusprolaps-C_LWS-_Diskusprolaps_Weiteres.docx.html" data-label="LWS- Diskusprolaps Weiteres" data-search="11 LWS Diskusprolaps-C LWS- Diskusprolaps Weiteres.docx 11_LWS_Diskusprolaps-C_LWS-_Diskusprolaps_Weiteres.docx.html LWS- Diskusprolaps Weiteres" data-group="11 LWS Diskusprolaps-C" data-sec="11">LWS- Diskusprolaps Weiteres</a></li>
+      <li class="docItem"><a class="docLink" href="11_LWS_Diskusprolaps-C_LWS.png.html" data-label="LWS" data-search="11 LWS Diskusprolaps-C LWS.png 11_LWS_Diskusprolaps-C_LWS.png.html LWS" data-group="11 LWS Diskusprolaps-C" data-sec="11">LWS</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="12">
+  <summary><span class="secNum">12</span><span class="secTitle">pAVK-C</span><span class="secMeta" data-secmeta="12"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="12_pAVK-C_pAVK_bfz.docx.html" data-label="pAVK bfz" data-search="12 pAVK-C pAVK bfz.docx 12_pAVK-C_pAVK_bfz.docx.html pAVK bfz" data-group="12 pAVK-C" data-sec="12">pAVK bfz</a></li>
+      <li class="docItem"><a class="docLink" href="12_pAVK-C_pAVK_Vollsatz.docx.html" data-label="pAVK Vollsatz" data-search="12 pAVK-C pAVK Vollsatz.docx 12_pAVK-C_pAVK_Vollsatz.docx.html pAVK Vollsatz" data-group="12 pAVK-C" data-sec="12">pAVK Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="12_pAVK-C_pAVK_DrGuntersFragen.docx.html" data-label="pAVK Dr Gunter Soruları" data-search="12 pAVK-C pAVK_DrGuntersFragen.docx 12_pAVK-C_pAVK_DrGuntersFragen.docx.html pAVK Dr Gunter Soruları" data-group="12 pAVK-C" data-sec="12">pAVK Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="12_pAVK-C_pAVK_Weiteres_Vorgehen.docx.html" data-label="pAVK Devam / Yaklaşım" data-search="12 pAVK-C pAVK Weiteres Vorgehen.docx 12_pAVK-C_pAVK_Weiteres_Vorgehen.docx.html pAVK Devam / Yaklaşım" data-group="12 pAVK-C" data-sec="12">pAVK Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="12_pAVK-C_pAVK.png.html" data-label="pAVK" data-search="12 pAVK-C pAVK.png 12_pAVK-C_pAVK.png.html pAVK" data-group="12 pAVK-C" data-sec="12">pAVK</a></li>
+      <li class="docItem"><a class="docLink" href="12_pAVK-C_pAVK_Brief.png.html" data-label="pAVK Brief" data-search="12 pAVK-C pAVK Brief.png 12_pAVK-C_pAVK_Brief.png.html pAVK Brief" data-group="12 pAVK-C" data-sec="12">pAVK Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="13">
+  <summary><span class="secNum">13</span><span class="secTitle">TVT mit Sinüsitis-C</span><span class="secMeta" data-secmeta="13"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="13_TVT_mit_Sinüsitis-C__TVT_mit_Sinusitis_bfz.docx.html" data-label="TVT mit Sinusitis bfz" data-search="13 TVT mit Sinüsitis-C TVT mit Sinusitis bfz.docx 13_TVT_mit_Sinüsitis-C__TVT_mit_Sinusitis_bfz.docx.html TVT mit Sinusitis bfz" data-group="13 TVT mit Sinüsitis-C" data-sec="13">TVT mit Sinusitis bfz</a></li>
+      <li class="docItem"><a class="docLink" href="13_TVT_mit_Sinüsitis-C__TVT_mit_Sinusitis_Vollsatz.docx.html" data-label="TVT mit Sinusitis Vollsatz" data-search="13 TVT mit Sinüsitis-C TVT mit Sinusitis Vollsatz.docx 13_TVT_mit_Sinüsitis-C__TVT_mit_Sinusitis_Vollsatz.docx.html TVT mit Sinusitis Vollsatz" data-group="13 TVT mit Sinüsitis-C" data-sec="13">TVT mit Sinusitis Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="13_TVT_mit_Sinüsitis-C__TVT_mit_Sinusitis__Weiteres_Vorgehen-__.docx.html" data-label="TVT mit Sinusitis Devam / Yaklaşım-" data-search="13 TVT mit Sinüsitis-C TVT mit Sinusitis  Weiteres Vorgehen-  .docx 13_TVT_mit_Sinüsitis-C__TVT_mit_Sinusitis__Weiteres_Vorgehen-__.docx.html TVT mit Sinusitis Devam / Yaklaşım-" data-group="13 TVT mit Sinüsitis-C" data-sec="13">TVT mit Sinusitis Devam / Yaklaşım-</a></li>
+      <li class="docItem"><a class="docLink" href="13_TVT_mit_Sinüsitis-C__TVT_Sinüsitis.png.html" data-label="TVT Sinüsitis" data-search="13 TVT mit Sinüsitis-C TVT Sinüsitis.png 13_TVT_mit_Sinüsitis-C__TVT_Sinüsitis.png.html TVT Sinüsitis" data-group="13 TVT mit Sinüsitis-C" data-sec="13">TVT Sinüsitis</a></li>
+      <li class="docItem"><a class="docLink" href="13_TVT_mit_Sinüsitis-C__TVT_mit_Sinüsitis_Brief.png.html" data-label="TVT mit Sinüsitis Brief" data-search="13 TVT mit Sinüsitis-C TVT mit Sinüsitis Brief.png 13_TVT_mit_Sinüsitis-C__TVT_mit_Sinüsitis_Brief.png.html TVT mit Sinüsitis Brief" data-group="13 TVT mit Sinüsitis-C" data-sec="13">TVT mit Sinüsitis Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="13">
+  <summary><span class="secNum">13</span><span class="secTitle">TVT-C</span><span class="secMeta" data-secmeta="13"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="13_TVT-C_TVT_bfz.docx.html" data-label="TVT bfz" data-search="13 TVT-C TVT bfz.docx 13_TVT-C_TVT_bfz.docx.html TVT bfz" data-group="13 TVT-C" data-sec="13">TVT bfz</a></li>
+      <li class="docItem"><a class="docLink" href="13_TVT-C_TVT_Vollsatz.docx.html" data-label="TVT Vollsatz" data-search="13 TVT-C TVT Vollsatz.docx 13_TVT-C_TVT_Vollsatz.docx.html TVT Vollsatz" data-group="13 TVT-C" data-sec="13">TVT Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="13_TVT-C_TVT_DrGuntersFragen.docx.html" data-label="TVT Dr Gunter Soruları" data-search="13 TVT-C TVT_DrGuntersFragen.docx 13_TVT-C_TVT_DrGuntersFragen.docx.html TVT Dr Gunter Soruları" data-group="13 TVT-C" data-sec="13">TVT Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="13_TVT-C_TVT__Weiteres_Vorgehen-__.docx.html" data-label="TVT Devam / Yaklaşım-" data-search="13 TVT-C TVT  Weiteres Vorgehen-  .docx 13_TVT-C_TVT__Weiteres_Vorgehen-__.docx.html TVT Devam / Yaklaşım-" data-group="13 TVT-C" data-sec="13">TVT Devam / Yaklaşım-</a></li>
+      <li class="docItem"><a class="docLink" href="13_TVT-C_TVT_Brief.png.html" data-label="TVT Brief" data-search="13 TVT-C TVT Brief.png 13_TVT-C_TVT_Brief.png.html TVT Brief" data-group="13 TVT-C" data-sec="13">TVT Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="14">
+  <summary><span class="secNum">14</span><span class="secTitle">Ulcus cruris-C</span><span class="secMeta" data-secmeta="14"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="14_Ulcus_cruris-C_Ulcus_cruris_bfz.docx.html" data-label="Ulcus cruris bfz" data-search="14 Ulcus cruris-C Ulcus cruris bfz.docx 14_Ulcus_cruris-C_Ulcus_cruris_bfz.docx.html Ulcus cruris bfz" data-group="14 Ulcus cruris-C" data-sec="14">Ulcus cruris bfz</a></li>
+      <li class="docItem"><a class="docLink" href="14_Ulcus_cruris-C_Ulcus_cruris_Vollsatz.docx.html" data-label="Ulcus cruris Vollsatz" data-search="14 Ulcus cruris-C Ulcus cruris Vollsatz.docx 14_Ulcus_cruris-C_Ulcus_cruris_Vollsatz.docx.html Ulcus cruris Vollsatz" data-group="14 Ulcus cruris-C" data-sec="14">Ulcus cruris Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="14_Ulcus_cruris-C_Ulcus_cruris_DrGuntersFragen.docx.html" data-label="Ulcus cruris Dr Gunter Soruları" data-search="14 Ulcus cruris-C Ulcus cruris_DrGuntersFragen.docx 14_Ulcus_cruris-C_Ulcus_cruris_DrGuntersFragen.docx.html Ulcus cruris Dr Gunter Soruları" data-group="14 Ulcus cruris-C" data-sec="14">Ulcus cruris Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="14_Ulcus_cruris-C_Ulcus_cruris_Weiteres_vorgehen.docx.html" data-label="Ulcus cruris Weiteres vorgehen" data-search="14 Ulcus cruris-C Ulcus cruris Weiteres vorgehen.docx 14_Ulcus_cruris-C_Ulcus_cruris_Weiteres_vorgehen.docx.html Ulcus cruris Weiteres vorgehen" data-group="14 Ulcus cruris-C" data-sec="14">Ulcus cruris Weiteres vorgehen</a></li>
+      <li class="docItem"><a class="docLink" href="14_Ulcus_cruris-C_Ulcus_cruris.png.html" data-label="Ulcus cruris" data-search="14 Ulcus cruris-C Ulcus cruris.png 14_Ulcus_cruris-C_Ulcus_cruris.png.html Ulcus cruris" data-group="14 Ulcus cruris-C" data-sec="14">Ulcus cruris</a></li>
+      <li class="docItem"><a class="docLink" href="14_Ulcus_cruris-C_Ulcus_cruris_Brief.png.html" data-label="Ulcus cruris Brief" data-search="14 Ulcus cruris-C Ulcus cruris Brief.png 14_Ulcus_cruris-C_Ulcus_cruris_Brief.png.html Ulcus cruris Brief" data-group="14 Ulcus cruris-C" data-sec="14">Ulcus cruris Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="15">
+  <summary><span class="secNum">15</span><span class="secTitle">Epilepsie-C</span><span class="secMeta" data-secmeta="15"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="15_Epilepsie-C__Epilepsie_Vollsatz.docx.html" data-label="Epilepsie Vollsatz" data-search="15 Epilepsie-C Epilepsie Vollsatz.docx 15_Epilepsie-C__Epilepsie_Vollsatz.docx.html Epilepsie Vollsatz" data-group="15 Epilepsie-C" data-sec="15">Epilepsie Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="15_Epilepsie-C__Epilepsie_DrGuntersFragen.docx.html" data-label="Epilepsie Dr Gunter Soruları" data-search="15 Epilepsie-C Epilepsie_DrGuntersFragen.docx 15_Epilepsie-C__Epilepsie_DrGuntersFragen.docx.html Epilepsie Dr Gunter Soruları" data-group="15 Epilepsie-C" data-sec="15">Epilepsie Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="15_Epilepsie-C__Weiteres_Vorgehen_Epilepsie.docx.html" data-label="Devam / Yaklaşım Epilepsie" data-search="15 Epilepsie-C Weiteres Vorgehen Epilepsie.docx 15_Epilepsie-C__Weiteres_Vorgehen_Epilepsie.docx.html Devam / Yaklaşım Epilepsie" data-group="15 Epilepsie-C" data-sec="15">Devam / Yaklaşım Epilepsie</a></li>
+      <li class="docItem"><a class="docLink" href="15_Epilepsie-C__Epilepsie.png.html" data-label="Epilepsie" data-search="15 Epilepsie-C Epilepsie.png 15_Epilepsie-C__Epilepsie.png.html Epilepsie" data-group="15 Epilepsie-C" data-sec="15">Epilepsie</a></li>
+      <li class="docItem"><a class="docLink" href="15_Epilepsie-C__Epilepsie_Brief_.png.html" data-label="Epilepsie Brief" data-search="15 Epilepsie-C Epilepsie Brief .png 15_Epilepsie-C__Epilepsie_Brief_.png.html Epilepsie Brief" data-group="15 Epilepsie-C" data-sec="15">Epilepsie Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="16">
+  <summary><span class="secNum">16</span><span class="secTitle">Migraene-C</span><span class="secMeta" data-secmeta="16"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="16_Migraene-C__Migrane_bfz.docx.html" data-label="Migrane bfz" data-search="16 Migraene-C Migrane bfz.docx 16_Migraene-C__Migrane_bfz.docx.html Migrane bfz" data-group="16 Migraene-C" data-sec="16">Migrane bfz</a></li>
+      <li class="docItem"><a class="docLink" href="16_Migraene-C__Migrane_Vollsatz.docx.html" data-label="Migrane Vollsatz" data-search="16 Migraene-C Migrane Vollsatz.docx 16_Migraene-C__Migrane_Vollsatz.docx.html Migrane Vollsatz" data-group="16 Migraene-C" data-sec="16">Migrane Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="16_Migraene-C__Migrane_DrGuntersFragen.docx.html" data-label="Migrane Dr Gunter Soruları" data-search="16 Migraene-C Migrane_DrGuntersFragen.docx 16_Migraene-C__Migrane_DrGuntersFragen.docx.html Migrane Dr Gunter Soruları" data-group="16 Migraene-C" data-sec="16">Migrane Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="16_Migraene-C__Migrane_Weiteres_vorgehen.docx.html" data-label="Migrane Weiteres vorgehen" data-search="16 Migraene-C Migrane Weiteres vorgehen.docx 16_Migraene-C__Migrane_Weiteres_vorgehen.docx.html Migrane Weiteres vorgehen" data-group="16 Migraene-C" data-sec="16">Migrane Weiteres vorgehen</a></li>
+      <li class="docItem"><a class="docLink" href="16_Migraene-C__Migrane.png.html" data-label="Migrane" data-search="16 Migraene-C Migrane.png 16_Migraene-C__Migrane.png.html Migrane" data-group="16 Migraene-C" data-sec="16">Migrane</a></li>
+      <li class="docItem"><a class="docLink" href="16_Migraene-C__Migrane_Brief.png.html" data-label="Migrane Brief" data-search="16 Migraene-C Migrane Brief.png 16_Migraene-C__Migrane_Brief.png.html Migrane Brief" data-group="16 Migraene-C" data-sec="16">Migrane Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="17">
+  <summary><span class="secNum">17</span><span class="secTitle">Pneumonie-C</span><span class="secMeta" data-secmeta="17"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="17_Pneumonie-C_Pneumonie_Vollsatz.docx.html" data-label="Pneumonie Vollsatz" data-search="17 Pneumonie-C Pneumonie Vollsatz.docx 17_Pneumonie-C_Pneumonie_Vollsatz.docx.html Pneumonie Vollsatz" data-group="17 Pneumonie-C" data-sec="17">Pneumonie Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="17_Pneumonie-C_Pneumonie_DrGuntersFragen.docx.html" data-label="Pneumonie Dr Gunter Soruları" data-search="17 Pneumonie-C Pneumonie_DrGuntersFragen.docx 17_Pneumonie-C_Pneumonie_DrGuntersFragen.docx.html Pneumonie Dr Gunter Soruları" data-group="17 Pneumonie-C" data-sec="17">Pneumonie Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="17_Pneumonie-C_Pneumonie__Weiteres_Vorgehen.docx.html" data-label="Pneumonie Devam / Yaklaşım" data-search="17 Pneumonie-C Pneumonie  Weiteres Vorgehen.docx 17_Pneumonie-C_Pneumonie__Weiteres_Vorgehen.docx.html Pneumonie Devam / Yaklaşım" data-group="17 Pneumonie-C" data-sec="17">Pneumonie Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="17_Pneumonie-C_Pneumonie.png.html" data-label="Pneumonie" data-search="17 Pneumonie-C Pneumonie.png 17_Pneumonie-C_Pneumonie.png.html Pneumonie" data-group="17 Pneumonie-C" data-sec="17">Pneumonie</a></li>
+      <li class="docItem"><a class="docLink" href="17_Pneumonie-C_Pneumonie_Brief.png.html" data-label="Pneumonie Brief" data-search="17 Pneumonie-C Pneumonie Brief.png 17_Pneumonie-C_Pneumonie_Brief.png.html Pneumonie Brief" data-group="17 Pneumonie-C" data-sec="17">Pneumonie Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="18">
+  <summary><span class="secNum">18</span><span class="secTitle">Asthma bronchiale-C</span><span class="secMeta" data-secmeta="18"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="18_Asthma_bronchiale-C_Asthma_bronchiale_bfz_______________________________________________________________________.docx.html" data-label="Asthma bronchiale bfz" data-search="18 Asthma bronchiale-C Asthma bronchiale bfz                                                                       .docx 18_Asthma_bronchiale-C_Asthma_bronchiale_bfz_______________________________________________________________________.docx.html Asthma bronchiale bfz" data-group="18 Asthma bronchiale-C" data-sec="18">Asthma bronchiale bfz</a></li>
+      <li class="docItem"><a class="docLink" href="18_Asthma_bronchiale-C_Asthma_bronchiale_Vollsatz.docx.html" data-label="Asthma bronchiale Vollsatz" data-search="18 Asthma bronchiale-C Asthma bronchiale Vollsatz.docx 18_Asthma_bronchiale-C_Asthma_bronchiale_Vollsatz.docx.html Asthma bronchiale Vollsatz" data-group="18 Asthma bronchiale-C" data-sec="18">Asthma bronchiale Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="18_Asthma_bronchiale-C_Asthma_DrGuntersFragen.docx.html" data-label="Asthma Dr Gunter Soruları" data-search="18 Asthma bronchiale-C Asthma_DrGuntersFragen.docx 18_Asthma_bronchiale-C_Asthma_DrGuntersFragen.docx.html Asthma Dr Gunter Soruları" data-group="18 Asthma bronchiale-C" data-sec="18">Asthma Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="18_Asthma_bronchiale-C_Asthma_bronschiale__Weiteres_Vorgehen__.docx.html" data-label="Asthma bronschiale Devam / Yaklaşım" data-search="18 Asthma bronchiale-C Asthma bronschiale  Weiteres Vorgehen  .docx 18_Asthma_bronchiale-C_Asthma_bronschiale__Weiteres_Vorgehen__.docx.html Asthma bronschiale Devam / Yaklaşım" data-group="18 Asthma bronchiale-C" data-sec="18">Asthma bronschiale Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="18_Asthma_bronchiale-C_Asthma.png.html" data-label="Asthma" data-search="18 Asthma bronchiale-C Asthma.png 18_Asthma_bronchiale-C_Asthma.png.html Asthma" data-group="18 Asthma bronchiale-C" data-sec="18">Asthma</a></li>
+      <li class="docItem"><a class="docLink" href="18_Asthma_bronchiale-C_Asthma_bronchiale_Brief.png.html" data-label="Asthma bronchiale Brief" data-search="18 Asthma bronchiale-C Asthma bronchiale Brief.png 18_Asthma_bronchiale-C_Asthma_bronchiale_Brief.png.html Asthma bronchiale Brief" data-group="18 Asthma bronchiale-C" data-sec="18">Asthma bronchiale Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="19">
+  <summary><span class="secNum">19</span><span class="secTitle">Tonsillitis-C</span><span class="secMeta" data-secmeta="19"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="19_Tonsillitis-C_Tonsillitis_bfz.docx.html" data-label="Tonsillitis bfz" data-search="19 Tonsillitis-C Tonsillitis bfz.docx 19_Tonsillitis-C_Tonsillitis_bfz.docx.html Tonsillitis bfz" data-group="19 Tonsillitis-C" data-sec="19">Tonsillitis bfz</a></li>
+      <li class="docItem"><a class="docLink" href="19_Tonsillitis-C_Tonsillitis_Vollsatz_.docx.html" data-label="Tonsillitis Vollsatz" data-search="19 Tonsillitis-C Tonsillitis Vollsatz .docx 19_Tonsillitis-C_Tonsillitis_Vollsatz_.docx.html Tonsillitis Vollsatz" data-group="19 Tonsillitis-C" data-sec="19">Tonsillitis Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="19_Tonsillitis-C_Tonsillitis__DrGuntersFragen.docx.html" data-label="Tonsillitis Dr Gunter Soruları" data-search="19 Tonsillitis-C Tonsillitis _DrGuntersFragen.docx 19_Tonsillitis-C_Tonsillitis__DrGuntersFragen.docx.html Tonsillitis Dr Gunter Soruları" data-group="19 Tonsillitis-C" data-sec="19">Tonsillitis Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="19_Tonsillitis-C_Weiteres.docx.html" data-label="Weiteres" data-search="19 Tonsillitis-C Weiteres.docx 19_Tonsillitis-C_Weiteres.docx.html Weiteres" data-group="19 Tonsillitis-C" data-sec="19">Weiteres</a></li>
+      <li class="docItem"><a class="docLink" href="19_Tonsillitis-C_Angina_tonsillaris.png.html" data-label="Angina tonsillaris" data-search="19 Tonsillitis-C Angina tonsillaris.png 19_Tonsillitis-C_Angina_tonsillaris.png.html Angina tonsillaris" data-group="19 Tonsillitis-C" data-sec="19">Angina tonsillaris</a></li>
+      <li class="docItem"><a class="docLink" href="19_Tonsillitis-C_Tonsillitis__Brief.png.html" data-label="Tonsillitis Brief" data-search="19 Tonsillitis-C Tonsillitis  Brief.png 19_Tonsillitis-C_Tonsillitis__Brief.png.html Tonsillitis Brief" data-group="19 Tonsillitis-C" data-sec="19">Tonsillitis Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="20">
+  <summary><span class="secNum">20</span><span class="secTitle">Infektiöse mononukleose-C</span><span class="secMeta" data-secmeta="20"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="20_Infektiöse_mononukleose-C_infektiöse_Mononukleose_bfz.docx.html" data-label="infektiöse Mononukleose bfz" data-search="20 Infektiöse mononukleose-C infektiöse Mononukleose bfz.docx 20_Infektiöse_mononukleose-C_infektiöse_Mononukleose_bfz.docx.html infektiöse Mononukleose bfz" data-group="20 Infektiöse mononukleose-C" data-sec="20">infektiöse Mononukleose bfz</a></li>
+      <li class="docItem"><a class="docLink" href="20_Infektiöse_mononukleose-C_infektiöse_Mononukleose_Vollsatz.docx.html" data-label="infektiöse Mononukleose Vollsatz" data-search="20 Infektiöse mononukleose-C infektiöse Mononukleose Vollsatz.docx 20_Infektiöse_mononukleose-C_infektiöse_Mononukleose_Vollsatz.docx.html infektiöse Mononukleose Vollsatz" data-group="20 Infektiöse mononukleose-C" data-sec="20">infektiöse Mononukleose Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="20_Infektiöse_mononukleose-C_Infektiöse_Mononucleose_DrGuntersFragen.docx.html" data-label="Infektiöse Mononucleose Dr Gunter Soruları" data-search="20 Infektiöse mononukleose-C Infektiöse Mononucleose_DrGuntersFragen.docx 20_Infektiöse_mononukleose-C_Infektiöse_Mononucleose_DrGuntersFragen.docx.html Infektiöse Mononucleose Dr Gunter Soruları" data-group="20 Infektiöse mononukleose-C" data-sec="20">Infektiöse Mononucleose Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="20_Infektiöse_mononukleose-C_Weiteres_vorgehen.docx.html" data-label="Weiteres vorgehen" data-search="20 Infektiöse mononukleose-C Weiteres vorgehen.docx 20_Infektiöse_mononukleose-C_Weiteres_vorgehen.docx.html Weiteres vorgehen" data-group="20 Infektiöse mononukleose-C" data-sec="20">Weiteres vorgehen</a></li>
+      <li class="docItem"><a class="docLink" href="20_Infektiöse_mononukleose-C_IM.png.html" data-label="IM" data-search="20 Infektiöse mononukleose-C IM.png 20_Infektiöse_mononukleose-C_IM.png.html IM" data-group="20 Infektiöse mononukleose-C" data-sec="20">IM</a></li>
+      <li class="docItem"><a class="docLink" href="20_Infektiöse_mononukleose-C_Infektiöse_mononukleose_Brief.png.html" data-label="Infektiöse mononukleose Brief" data-search="20 Infektiöse mononukleose-C Infektiöse mononukleose Brief.png 20_Infektiöse_mononukleose-C_Infektiöse_mononukleose_Brief.png.html Infektiöse mononukleose Brief" data-group="20 Infektiöse mononukleose-C" data-sec="20">Infektiöse mononukleose Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="21">
+  <summary><span class="secNum">21</span><span class="secTitle">Urolithiasis-C</span><span class="secMeta" data-secmeta="21"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="21_Urolithiasis-C__Urolithiasis_bfz.docx.html" data-label="Urolithiasis bfz" data-search="21 Urolithiasis-C Urolithiasis bfz.docx 21_Urolithiasis-C__Urolithiasis_bfz.docx.html Urolithiasis bfz" data-group="21 Urolithiasis-C" data-sec="21">Urolithiasis bfz</a></li>
+      <li class="docItem"><a class="docLink" href="21_Urolithiasis-C__Urolithiasis_Vollsatz.docx.html" data-label="Urolithiasis Vollsatz" data-search="21 Urolithiasis-C Urolithiasis Vollsatz.docx 21_Urolithiasis-C__Urolithiasis_Vollsatz.docx.html Urolithiasis Vollsatz" data-group="21 Urolithiasis-C" data-sec="21">Urolithiasis Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="21_Urolithiasis-C__Nephrolithiasis_DrGuntersFragen.docx.html" data-label="Nephrolithiasis Dr Gunter Soruları" data-search="21 Urolithiasis-C Nephrolithiasis_DrGuntersFragen.docx 21_Urolithiasis-C__Nephrolithiasis_DrGuntersFragen.docx.html Nephrolithiasis Dr Gunter Soruları" data-group="21 Urolithiasis-C" data-sec="21">Nephrolithiasis Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="21_Urolithiasis-C__Urolithiasis__Weiteres_Vorgehen-__.docx.html" data-label="Urolithiasis Devam / Yaklaşım-" data-search="21 Urolithiasis-C Urolithiasis  Weiteres Vorgehen-  .docx 21_Urolithiasis-C__Urolithiasis__Weiteres_Vorgehen-__.docx.html Urolithiasis Devam / Yaklaşım-" data-group="21 Urolithiasis-C" data-sec="21">Urolithiasis Devam / Yaklaşım-</a></li>
+      <li class="docItem"><a class="docLink" href="21_Urolithiasis-C__Urolithiasis.png.html" data-label="Urolithiasis" data-search="21 Urolithiasis-C Urolithiasis.png 21_Urolithiasis-C__Urolithiasis.png.html Urolithiasis" data-group="21 Urolithiasis-C" data-sec="21">Urolithiasis</a></li>
+      <li class="docItem"><a class="docLink" href="21_Urolithiasis-C__Urolithiasis_Brief.png.html" data-label="Urolithiasis Brief" data-search="21 Urolithiasis-C Urolithiasis Brief.png 21_Urolithiasis-C__Urolithiasis_Brief.png.html Urolithiasis Brief" data-group="21 Urolithiasis-C" data-sec="21">Urolithiasis Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="22">
+  <summary><span class="secNum">22</span><span class="secTitle">Pyelonephritis-C</span><span class="secMeta" data-secmeta="22"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="22_Pyelonephritis-C_Pyelonephritis_bfz.docx.html" data-label="Pyelonephritis bfz" data-search="22 Pyelonephritis-C Pyelonephritis bfz.docx 22_Pyelonephritis-C_Pyelonephritis_bfz.docx.html Pyelonephritis bfz" data-group="22 Pyelonephritis-C" data-sec="22">Pyelonephritis bfz</a></li>
+      <li class="docItem"><a class="docLink" href="22_Pyelonephritis-C_Pyelonephritis_Vollsatz.docx.html" data-label="Pyelonephritis Vollsatz" data-search="22 Pyelonephritis-C Pyelonephritis Vollsatz.docx 22_Pyelonephritis-C_Pyelonephritis_Vollsatz.docx.html Pyelonephritis Vollsatz" data-group="22 Pyelonephritis-C" data-sec="22">Pyelonephritis Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="22_Pyelonephritis-C_Pyelonephritis_DrGuntersFragen.docx.html" data-label="Pyelonephritis Dr Gunter Soruları" data-search="22 Pyelonephritis-C Pyelonephritis_DrGuntersFragen.docx 22_Pyelonephritis-C_Pyelonephritis_DrGuntersFragen.docx.html Pyelonephritis Dr Gunter Soruları" data-group="22 Pyelonephritis-C" data-sec="22">Pyelonephritis Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="22_Pyelonephritis-C_Weiteres_vorgehen.docx.html" data-label="Weiteres vorgehen" data-search="22 Pyelonephritis-C Weiteres vorgehen.docx 22_Pyelonephritis-C_Weiteres_vorgehen.docx.html Weiteres vorgehen" data-group="22 Pyelonephritis-C" data-sec="22">Weiteres vorgehen</a></li>
+      <li class="docItem"><a class="docLink" href="22_Pyelonephritis-C_Pyelonephritis.png.html" data-label="Pyelonephritis" data-search="22 Pyelonephritis-C Pyelonephritis.png 22_Pyelonephritis-C_Pyelonephritis.png.html Pyelonephritis" data-group="22 Pyelonephritis-C" data-sec="22">Pyelonephritis</a></li>
+      <li class="docItem"><a class="docLink" href="22_Pyelonephritis-C_Pyelonephritis_Brief.png.html" data-label="Pyelonephritis Brief" data-search="22 Pyelonephritis-C Pyelonephritis Brief.png 22_Pyelonephritis-C_Pyelonephritis_Brief.png.html Pyelonephritis Brief" data-group="22 Pyelonephritis-C" data-sec="22">Pyelonephritis Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="23">
+  <summary><span class="secNum">23</span><span class="secTitle">Herzinsuffizienz-C</span><span class="secMeta" data-secmeta="23"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="23_Herzinsuffizienz-C_Herzinsuffizienz_bfz.docx.html" data-label="Herzinsuffizienz bfz" data-search="23 Herzinsuffizienz-C Herzinsuffizienz bfz.docx 23_Herzinsuffizienz-C_Herzinsuffizienz_bfz.docx.html Herzinsuffizienz bfz" data-group="23 Herzinsuffizienz-C" data-sec="23">Herzinsuffizienz bfz</a></li>
+      <li class="docItem"><a class="docLink" href="23_Herzinsuffizienz-C_Herzinsuffizienz_Vollsatz.docx.html" data-label="Herzinsuffizienz Vollsatz" data-search="23 Herzinsuffizienz-C Herzinsuffizienz Vollsatz.docx 23_Herzinsuffizienz-C_Herzinsuffizienz_Vollsatz.docx.html Herzinsuffizienz Vollsatz" data-group="23 Herzinsuffizienz-C" data-sec="23">Herzinsuffizienz Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="23_Herzinsuffizienz-C_Herzinsuffizienz_DrGuntersFragen.docx.html" data-label="Herzinsuffizienz Dr Gunter Soruları" data-search="23 Herzinsuffizienz-C Herzinsuffizienz_DrGuntersFragen.docx 23_Herzinsuffizienz-C_Herzinsuffizienz_DrGuntersFragen.docx.html Herzinsuffizienz Dr Gunter Soruları" data-group="23 Herzinsuffizienz-C" data-sec="23">Herzinsuffizienz Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="23_Herzinsuffizienz-C_Herzinsuffiziens_Weiteres_Vorgehen-.docx.html" data-label="Herzinsuffiziens Devam / Yaklaşım-" data-search="23 Herzinsuffizienz-C Herzinsuffiziens Weiteres Vorgehen-.docx 23_Herzinsuffizienz-C_Herzinsuffiziens_Weiteres_Vorgehen-.docx.html Herzinsuffiziens Devam / Yaklaşım-" data-group="23 Herzinsuffizienz-C" data-sec="23">Herzinsuffiziens Devam / Yaklaşım-</a></li>
+      <li class="docItem"><a class="docLink" href="23_Herzinsuffizienz-C_Herzinsüffizienz.png.html" data-label="Herzinsüffizienz" data-search="23 Herzinsuffizienz-C Herzinsüffizienz.png 23_Herzinsuffizienz-C_Herzinsüffizienz.png.html Herzinsüffizienz" data-group="23 Herzinsuffizienz-C" data-sec="23">Herzinsüffizienz</a></li>
+      <li class="docItem"><a class="docLink" href="23_Herzinsuffizienz-C_Herzinsuffizienz_Brief.png.html" data-label="Herzinsuffizienz Brief" data-search="23 Herzinsuffizienz-C Herzinsuffizienz Brief.png 23_Herzinsuffizienz-C_Herzinsuffizienz_Brief.png.html Herzinsuffizienz Brief" data-group="23 Herzinsuffizienz-C" data-sec="23">Herzinsuffizienz Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="24">
+  <summary><span class="secNum">24</span><span class="secTitle">Angina pectoris - ACS -C</span><span class="secMeta" data-secmeta="24"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="24_Angina_pectoris_-_ACS_-C_KHK-_Angina_pectoris_.docx.html" data-label="KHK- Angina pectoris" data-search="24 Angina pectoris - ACS -C KHK- Angina pectoris .docx 24_Angina_pectoris_-_ACS_-C_KHK-_Angina_pectoris_.docx.html KHK- Angina pectoris" data-group="24 Angina pectoris - ACS -C" data-sec="24">KHK- Angina pectoris</a></li>
+      <li class="docItem"><a class="docLink" href="24_Angina_pectoris_-_ACS_-C_KHK-_Angina_pectoris_Vollsatz.docx.html" data-label="KHK- Angina pectoris Vollsatz" data-search="24 Angina pectoris - ACS -C KHK- Angina pectoris Vollsatz.docx 24_Angina_pectoris_-_ACS_-C_KHK-_Angina_pectoris_Vollsatz.docx.html KHK- Angina pectoris Vollsatz" data-group="24 Angina pectoris - ACS -C" data-sec="24">KHK- Angina pectoris Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="24_Angina_pectoris_-_ACS_-C_Angina_Pectoris_DrGuntersFragen.docx.html" data-label="Angina Pectoris Dr Gunter Soruları" data-search="24 Angina pectoris - ACS -C Angina Pectoris_DrGuntersFragen.docx 24_Angina_pectoris_-_ACS_-C_Angina_Pectoris_DrGuntersFragen.docx.html Angina Pectoris Dr Gunter Soruları" data-group="24 Angina pectoris - ACS -C" data-sec="24">Angina Pectoris Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="24_Angina_pectoris_-_ACS_-C_KHK-_Angina_Brief.png.html" data-label="KHK- Angina Brief" data-search="24 Angina pectoris - ACS -C KHK- Angina Brief.png 24_Angina_pectoris_-_ACS_-C_KHK-_Angina_Brief.png.html KHK- Angina Brief" data-group="24 Angina pectoris - ACS -C" data-sec="24">KHK- Angina Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="24">
+  <summary><span class="secNum">24</span><span class="secTitle">Myokardinfarkt-C</span><span class="secMeta" data-secmeta="24"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="24_Myokardinfarkt-C__Myokardinfarkt__Weitere_Schritte.docx.html" data-label="Myokardinfarkt Weitere Schritte" data-search="24 Myokardinfarkt-C Myokardinfarkt  Weitere Schritte.docx 24_Myokardinfarkt-C__Myokardinfarkt__Weitere_Schritte.docx.html Myokardinfarkt Weitere Schritte" data-group="24 Myokardinfarkt-C" data-sec="24">Myokardinfarkt Weitere Schritte</a></li>
+      <li class="docItem"><a class="docLink" href="24_Myokardinfarkt-C__Myokardinfarkt_bfz.docx.html" data-label="Myokardinfarkt bfz" data-search="24 Myokardinfarkt-C Myokardinfarkt bfz.docx 24_Myokardinfarkt-C__Myokardinfarkt_bfz.docx.html Myokardinfarkt bfz" data-group="24 Myokardinfarkt-C" data-sec="24">Myokardinfarkt bfz</a></li>
+      <li class="docItem"><a class="docLink" href="24_Myokardinfarkt-C__Myokardinfarkt_Vollsatz.docx.html" data-label="Myokardinfarkt Vollsatz" data-search="24 Myokardinfarkt-C Myokardinfarkt Vollsatz.docx 24_Myokardinfarkt-C__Myokardinfarkt_Vollsatz.docx.html Myokardinfarkt Vollsatz" data-group="24 Myokardinfarkt-C" data-sec="24">Myokardinfarkt Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="24_Myokardinfarkt-C__Herzinfarkt.png.html" data-label="Herzinfarkt" data-search="24 Myokardinfarkt-C Herzinfarkt.png 24_Myokardinfarkt-C__Herzinfarkt.png.html Herzinfarkt" data-group="24 Myokardinfarkt-C" data-sec="24">Herzinfarkt</a></li>
+      <li class="docItem"><a class="docLink" href="24_Myokardinfarkt-C__Myokardinfarkt_Brief_.png.html" data-label="Myokardinfarkt Brief" data-search="24 Myokardinfarkt-C Myokardinfarkt Brief .png 24_Myokardinfarkt-C__Myokardinfarkt_Brief_.png.html Myokardinfarkt Brief" data-group="24 Myokardinfarkt-C" data-sec="24">Myokardinfarkt Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="25">
+  <summary><span class="secNum">25</span><span class="secTitle">Ösophaguskarzinom-C</span><span class="secMeta" data-secmeta="25"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="25_Ösophaguskarzinom-C_Frage_das_Ösophaguskarzinom.docx.html" data-label="Frage das Ösophaguskarzinom" data-search="25 Ösophaguskarzinom-C Frage das Ösophaguskarzinom.docx 25_Ösophaguskarzinom-C_Frage_das_Ösophaguskarzinom.docx.html Frage das Ösophaguskarzinom" data-group="25 Ösophaguskarzinom-C" data-sec="25">Frage das Ösophaguskarzinom</a></li>
+      <li class="docItem"><a class="docLink" href="25_Ösophaguskarzinom-C_Ösophaguskarzinom_bfz.docx.html" data-label="Ösophaguskarzinom bfz" data-search="25 Ösophaguskarzinom-C Ösophaguskarzinom bfz.docx 25_Ösophaguskarzinom-C_Ösophaguskarzinom_bfz.docx.html Ösophaguskarzinom bfz" data-group="25 Ösophaguskarzinom-C" data-sec="25">Ösophaguskarzinom bfz</a></li>
+      <li class="docItem"><a class="docLink" href="25_Ösophaguskarzinom-C_Ösophaguskarzinom__Vollsatz.docx.html" data-label="Ösophaguskarzinom Vollsatz" data-search="25 Ösophaguskarzinom-C Ösophaguskarzinom  Vollsatz.docx 25_Ösophaguskarzinom-C_Ösophaguskarzinom__Vollsatz.docx.html Ösophaguskarzinom Vollsatz" data-group="25 Ösophaguskarzinom-C" data-sec="25">Ösophaguskarzinom Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="25_Ösophaguskarzinom-C_Ösophaguskarzinom_DrGuntersFragen.docx.html" data-label="Ösophaguskarzinom Dr Gunter Soruları" data-search="25 Ösophaguskarzinom-C Ösophaguskarzinom_DrGuntersFragen.docx 25_Ösophaguskarzinom-C_Ösophaguskarzinom_DrGuntersFragen.docx.html Ösophaguskarzinom Dr Gunter Soruları" data-group="25 Ösophaguskarzinom-C" data-sec="25">Ösophaguskarzinom Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="25_Ösophaguskarzinom-C_Weiteres_Vorgehen.docx.html" data-label="Devam / Yaklaşım" data-search="25 Ösophaguskarzinom-C Weiteres Vorgehen.docx 25_Ösophaguskarzinom-C_Weiteres_Vorgehen.docx.html Devam / Yaklaşım" data-group="25 Ösophaguskarzinom-C" data-sec="25">Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="25_Ösophaguskarzinom-C_Osophaguskarzinom.png.html" data-label="Osophaguskarzinom" data-search="25 Ösophaguskarzinom-C Osophaguskarzinom.png 25_Ösophaguskarzinom-C_Osophaguskarzinom.png.html Osophaguskarzinom" data-group="25 Ösophaguskarzinom-C" data-sec="25">Osophaguskarzinom</a></li>
+      <li class="docItem"><a class="docLink" href="25_Ösophaguskarzinom-C_Brief_2.png.html" data-label="Brief 2" data-search="25 Ösophaguskarzinom-C Brief 2.png 25_Ösophaguskarzinom-C_Brief_2.png.html Brief 2" data-group="25 Ösophaguskarzinom-C" data-sec="25">Brief 2</a></li>
+      <li class="docItem"><a class="docLink" href="25_Ösophaguskarzinom-C_Ösophaguskarzinom__Brief.png.html" data-label="Ösophaguskarzinom Brief" data-search="25 Ösophaguskarzinom-C Ösophaguskarzinom  Brief.png 25_Ösophaguskarzinom-C_Ösophaguskarzinom__Brief.png.html Ösophaguskarzinom Brief" data-group="25 Ösophaguskarzinom-C" data-sec="25">Ösophaguskarzinom Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="26">
+  <summary><span class="secNum">26</span><span class="secTitle">Choledocholithiasis-C</span><span class="secMeta" data-secmeta="26"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="26_Choledocholithiasis-C_Cholezystolithiasis_bfz.docx.html" data-label="Cholezystolithiasis bfz" data-search="26 Choledocholithiasis-C Cholezystolithiasis bfz.docx 26_Choledocholithiasis-C_Cholezystolithiasis_bfz.docx.html Cholezystolithiasis bfz" data-group="26 Choledocholithiasis-C" data-sec="26">Cholezystolithiasis bfz</a></li>
+      <li class="docItem"><a class="docLink" href="26_Choledocholithiasis-C_Frage_Cholezystolithiasis.docx.html" data-label="Frage Cholezystolithiasis" data-search="26 Choledocholithiasis-C Frage Cholezystolithiasis.docx 26_Choledocholithiasis-C_Frage_Cholezystolithiasis.docx.html Frage Cholezystolithiasis" data-group="26 Choledocholithiasis-C" data-sec="26">Frage Cholezystolithiasis</a></li>
+      <li class="docItem"><a class="docLink" href="26_Choledocholithiasis-C_Cholezystolithiasis_Vollsatz.docx.html" data-label="Cholezystolithiasis Vollsatz" data-search="26 Choledocholithiasis-C Cholezystolithiasis Vollsatz.docx 26_Choledocholithiasis-C_Cholezystolithiasis_Vollsatz.docx.html Cholezystolithiasis Vollsatz" data-group="26 Choledocholithiasis-C" data-sec="26">Cholezystolithiasis Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="26_Choledocholithiasis-C_Cholezystolithiasis_DrGuntersFragen.docx.html" data-label="Cholezystolithiasis Dr Gunter Soruları" data-search="26 Choledocholithiasis-C Cholezystolithiasis_DrGuntersFragen.docx 26_Choledocholithiasis-C_Cholezystolithiasis_DrGuntersFragen.docx.html Cholezystolithiasis Dr Gunter Soruları" data-group="26 Choledocholithiasis-C" data-sec="26">Cholezystolithiasis Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="26_Choledocholithiasis-C_Weiteres_Vorgehen-.docx.html" data-label="Devam / Yaklaşım-" data-search="26 Choledocholithiasis-C Weiteres Vorgehen-.docx 26_Choledocholithiasis-C_Weiteres_Vorgehen-.docx.html Devam / Yaklaşım-" data-group="26 Choledocholithiasis-C" data-sec="26">Devam / Yaklaşım-</a></li>
+      <li class="docItem"><a class="docLink" href="26_Choledocholithiasis-C_Cholezystolithiasis.png.html" data-label="Cholezystolithiasis" data-search="26 Choledocholithiasis-C Cholezystolithiasis.png 26_Choledocholithiasis-C_Cholezystolithiasis.png.html Cholezystolithiasis" data-group="26 Choledocholithiasis-C" data-sec="26">Cholezystolithiasis</a></li>
+      <li class="docItem"><a class="docLink" href="26_Choledocholithiasis-C_Brief_2.png.html" data-label="Brief 2" data-search="26 Choledocholithiasis-C Brief 2.png 26_Choledocholithiasis-C_Brief_2.png.html Brief 2" data-group="26 Choledocholithiasis-C" data-sec="26">Brief 2</a></li>
+      <li class="docItem"><a class="docLink" href="26_Choledocholithiasis-C_Choledocholithiasis_Brief.png.html" data-label="Choledocholithiasis Brief" data-search="26 Choledocholithiasis-C Choledocholithiasis Brief.png 26_Choledocholithiasis-C_Choledocholithiasis_Brief.png.html Choledocholithiasis Brief" data-group="26 Choledocholithiasis-C" data-sec="26">Choledocholithiasis Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="27">
+  <summary><span class="secNum">27</span><span class="secTitle">Ulcus ventriculi-C</span><span class="secMeta" data-secmeta="27"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="27_Ulcus_ventriculi-C_Frage_Ulcus_ventriculi.docx.html" data-label="Frage Ulcus ventriculi" data-search="27 Ulcus ventriculi-C Frage Ulcus ventriculi.docx 27_Ulcus_ventriculi-C_Frage_Ulcus_ventriculi.docx.html Frage Ulcus ventriculi" data-group="27 Ulcus ventriculi-C" data-sec="27">Frage Ulcus ventriculi</a></li>
+      <li class="docItem"><a class="docLink" href="27_Ulcus_ventriculi-C_Ulcus_ventriculi_bfz.docx.html" data-label="Ulcus ventriculi bfz" data-search="27 Ulcus ventriculi-C Ulcus ventriculi bfz.docx 27_Ulcus_ventriculi-C_Ulcus_ventriculi_bfz.docx.html Ulcus ventriculi bfz" data-group="27 Ulcus ventriculi-C" data-sec="27">Ulcus ventriculi bfz</a></li>
+      <li class="docItem"><a class="docLink" href="27_Ulcus_ventriculi-C_Ulcus_ventriculi_Vollsatz.docx.html" data-label="Ulcus ventriculi Vollsatz" data-search="27 Ulcus ventriculi-C Ulcus ventriculi Vollsatz.docx 27_Ulcus_ventriculi-C_Ulcus_ventriculi_Vollsatz.docx.html Ulcus ventriculi Vollsatz" data-group="27 Ulcus ventriculi-C" data-sec="27">Ulcus ventriculi Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="27_Ulcus_ventriculi-C_Ulcus_ventriculi_DrGuntersFragen.docx.html" data-label="Ulcus ventriculi Dr Gunter Soruları" data-search="27 Ulcus ventriculi-C Ulcus ventriculi_DrGuntersFragen.docx 27_Ulcus_ventriculi-C_Ulcus_ventriculi_DrGuntersFragen.docx.html Ulcus ventriculi Dr Gunter Soruları" data-group="27 Ulcus ventriculi-C" data-sec="27">Ulcus ventriculi Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="27_Ulcus_ventriculi-C_Weiteres_vorgehen.docx.html" data-label="Weiteres vorgehen" data-search="27 Ulcus ventriculi-C Weiteres vorgehen.docx 27_Ulcus_ventriculi-C_Weiteres_vorgehen.docx.html Weiteres vorgehen" data-group="27 Ulcus ventriculi-C" data-sec="27">Weiteres vorgehen</a></li>
+      <li class="docItem"><a class="docLink" href="27_Ulcus_ventriculi-C_Ulcus_ventriküli.png.html" data-label="Ulcus ventriküli" data-search="27 Ulcus ventriculi-C Ulcus ventriküli.png 27_Ulcus_ventriculi-C_Ulcus_ventriküli.png.html Ulcus ventriküli" data-group="27 Ulcus ventriculi-C" data-sec="27">Ulcus ventriküli</a></li>
+      <li class="docItem"><a class="docLink" href="27_Ulcus_ventriculi-C_Brief_2.png.html" data-label="Brief 2" data-search="27 Ulcus ventriculi-C Brief 2.png 27_Ulcus_ventriculi-C_Brief_2.png.html Brief 2" data-group="27 Ulcus ventriculi-C" data-sec="27">Brief 2</a></li>
+      <li class="docItem"><a class="docLink" href="27_Ulcus_ventriculi-C_Ulcus_ventriculi__Brief.png.html" data-label="Ulcus ventriculi Brief" data-search="27 Ulcus ventriculi-C Ulcus ventriculi  Brief.png 27_Ulcus_ventriculi-C_Ulcus_ventriculi__Brief.png.html Ulcus ventriculi Brief" data-group="27 Ulcus ventriculi-C" data-sec="27">Ulcus ventriculi Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="28">
+  <summary><span class="secNum">28</span><span class="secTitle">Kolonkarzinom-C</span><span class="secMeta" data-secmeta="28"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="28_Kolonkarzinom-C_Frage.docx.html" data-label="Frage" data-search="28 Kolonkarzinom-C Frage.docx 28_Kolonkarzinom-C_Frage.docx.html Frage" data-group="28 Kolonkarzinom-C" data-sec="28">Frage</a></li>
+      <li class="docItem"><a class="docLink" href="28_Kolonkarzinom-C_Kolonkarzinom_bfz.docx.html" data-label="Kolonkarzinom bfz" data-search="28 Kolonkarzinom-C Kolonkarzinom bfz.docx 28_Kolonkarzinom-C_Kolonkarzinom_bfz.docx.html Kolonkarzinom bfz" data-group="28 Kolonkarzinom-C" data-sec="28">Kolonkarzinom bfz</a></li>
+      <li class="docItem"><a class="docLink" href="28_Kolonkarzinom-C_Kolonkarzinom_Vollsatz.docx.html" data-label="Kolonkarzinom Vollsatz" data-search="28 Kolonkarzinom-C Kolonkarzinom Vollsatz.docx 28_Kolonkarzinom-C_Kolonkarzinom_Vollsatz.docx.html Kolonkarzinom Vollsatz" data-group="28 Kolonkarzinom-C" data-sec="28">Kolonkarzinom Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="28_Kolonkarzinom-C_Kolonkarzinom_DrGuntersFragen.docx.html" data-label="Kolonkarzinom Dr Gunter Soruları" data-search="28 Kolonkarzinom-C Kolonkarzinom_DrGuntersFragen.docx 28_Kolonkarzinom-C_Kolonkarzinom_DrGuntersFragen.docx.html Kolonkarzinom Dr Gunter Soruları" data-group="28 Kolonkarzinom-C" data-sec="28">Kolonkarzinom Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="28_Kolonkarzinom-C_Weiteres_Vorgehen-.docx.html" data-label="Devam / Yaklaşım-" data-search="28 Kolonkarzinom-C Weiteres Vorgehen-.docx 28_Kolonkarzinom-C_Weiteres_Vorgehen-.docx.html Devam / Yaklaşım-" data-group="28 Kolonkarzinom-C" data-sec="28">Devam / Yaklaşım-</a></li>
+      <li class="docItem"><a class="docLink" href="28_Kolonkarzinom-C_Kolonkarzinom.png.html" data-label="Kolonkarzinom" data-search="28 Kolonkarzinom-C Kolonkarzinom.png 28_Kolonkarzinom-C_Kolonkarzinom.png.html Kolonkarzinom" data-group="28 Kolonkarzinom-C" data-sec="28">Kolonkarzinom</a></li>
+      <li class="docItem"><a class="docLink" href="28_Kolonkarzinom-C_Brief_2.png.html" data-label="Brief 2" data-search="28 Kolonkarzinom-C Brief 2.png 28_Kolonkarzinom-C_Brief_2.png.html Brief 2" data-group="28 Kolonkarzinom-C" data-sec="28">Brief 2</a></li>
+      <li class="docItem"><a class="docLink" href="28_Kolonkarzinom-C_Kolonkarzinom_Brief.png.html" data-label="Kolonkarzinom Brief" data-search="28 Kolonkarzinom-C Kolonkarzinom Brief.png 28_Kolonkarzinom-C_Kolonkarzinom_Brief.png.html Kolonkarzinom Brief" data-group="28 Kolonkarzinom-C" data-sec="28">Kolonkarzinom Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="29">
+  <summary><span class="secNum">29</span><span class="secTitle">Colitis ulcerosa-C</span><span class="secMeta" data-secmeta="29"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="29_Colitis_ulcerosa-C__Colitis_ulcerosa_bfz.docx.html" data-label="Colitis ulcerosa bfz" data-search="29 Colitis ulcerosa-C Colitis ulcerosa bfz.docx 29_Colitis_ulcerosa-C__Colitis_ulcerosa_bfz.docx.html Colitis ulcerosa bfz" data-group="29 Colitis ulcerosa-C" data-sec="29">Colitis ulcerosa bfz</a></li>
+      <li class="docItem"><a class="docLink" href="29_Colitis_ulcerosa-C__Colitis_ulcerosa_Vollsatz.docx.html" data-label="Colitis ulcerosa Vollsatz" data-search="29 Colitis ulcerosa-C Colitis ulcerosa Vollsatz.docx 29_Colitis_ulcerosa-C__Colitis_ulcerosa_Vollsatz.docx.html Colitis ulcerosa Vollsatz" data-group="29 Colitis ulcerosa-C" data-sec="29">Colitis ulcerosa Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="29_Colitis_ulcerosa-C__Colitis_ulcerosa__Brief.png.html" data-label="Colitis ulcerosa Brief" data-search="29 Colitis ulcerosa-C Colitis ulcerosa  Brief.png 29_Colitis_ulcerosa-C__Colitis_ulcerosa__Brief.png.html Colitis ulcerosa Brief" data-group="29 Colitis ulcerosa-C" data-sec="29">Colitis ulcerosa Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="29">
+  <summary><span class="secNum">29</span><span class="secTitle">Enterokolitis : CED-C</span><span class="secMeta" data-secmeta="29"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="29_Enterokolitis_:_CED-C_Enterokolitis_bfz.docx.html" data-label="Enterokolitis bfz" data-search="29 Enterokolitis : CED-C Enterokolitis bfz.docx 29_Enterokolitis_:_CED-C_Enterokolitis_bfz.docx.html Enterokolitis bfz" data-group="29 Enterokolitis : CED-C" data-sec="29">Enterokolitis bfz</a></li>
+      <li class="docItem"><a class="docLink" href="29_Enterokolitis_:_CED-C_Enterokolitis_Vollsatz.docx.html" data-label="Enterokolitis Vollsatz" data-search="29 Enterokolitis : CED-C Enterokolitis Vollsatz.docx 29_Enterokolitis_:_CED-C_Enterokolitis_Vollsatz.docx.html Enterokolitis Vollsatz" data-group="29 Enterokolitis : CED-C" data-sec="29">Enterokolitis Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="29_Enterokolitis_:_CED-C_Enterokolitis_DrGuntersFragen.docx.html" data-label="Enterokolitis Dr Gunter Soruları" data-search="29 Enterokolitis : CED-C Enterokolitis_DrGuntersFragen.docx 29_Enterokolitis_:_CED-C_Enterokolitis_DrGuntersFragen.docx.html Enterokolitis Dr Gunter Soruları" data-group="29 Enterokolitis : CED-C" data-sec="29">Enterokolitis Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="29_Enterokolitis_:_CED-C_Enterokolitis__Brief.png.html" data-label="Enterokolitis Brief" data-search="29 Enterokolitis : CED-C Enterokolitis  Brief.png 29_Enterokolitis_:_CED-C_Enterokolitis__Brief.png.html Enterokolitis Brief" data-group="29 Enterokolitis : CED-C" data-sec="29">Enterokolitis Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="29">
+  <summary><span class="secNum">29</span><span class="secTitle">Enterokolitis-C</span><span class="secMeta" data-secmeta="29"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="29_Enterokolitis-C_Frage_Enterokolitis.docx.html" data-label="Frage Enterokolitis" data-search="29 Enterokolitis-C Frage Enterokolitis.docx 29_Enterokolitis-C_Frage_Enterokolitis.docx.html Frage Enterokolitis" data-group="29 Enterokolitis-C" data-sec="29">Frage Enterokolitis</a></li>
+      <li class="docItem"><a class="docLink" href="29_Enterokolitis-C_infektiöse_Enterokolitis_bfz.docx.html" data-label="infektiöse Enterokolitis bfz" data-search="29 Enterokolitis-C infektiöse Enterokolitis bfz.docx 29_Enterokolitis-C_infektiöse_Enterokolitis_bfz.docx.html infektiöse Enterokolitis bfz" data-group="29 Enterokolitis-C" data-sec="29">infektiöse Enterokolitis bfz</a></li>
+      <li class="docItem"><a class="docLink" href="29_Enterokolitis-C_Enterokolitis_Vollsatz.docx.html" data-label="Enterokolitis Vollsatz" data-search="29 Enterokolitis-C Enterokolitis Vollsatz.docx 29_Enterokolitis-C_Enterokolitis_Vollsatz.docx.html Enterokolitis Vollsatz" data-group="29 Enterokolitis-C" data-sec="29">Enterokolitis Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="29_Enterokolitis-C_Weiteres_Vorgehen.docx.html" data-label="Devam / Yaklaşım" data-search="29 Enterokolitis-C Weiteres Vorgehen.docx 29_Enterokolitis-C_Weiteres_Vorgehen.docx.html Devam / Yaklaşım" data-group="29 Enterokolitis-C" data-sec="29">Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="29_Enterokolitis-C_Enterokolitis_Brief.png.html" data-label="Enterokolitis Brief" data-search="29 Enterokolitis-C Enterokolitis Brief.png 29_Enterokolitis-C_Enterokolitis_Brief.png.html Enterokolitis Brief" data-group="29 Enterokolitis-C" data-sec="29">Enterokolitis Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="30">
+  <summary><span class="secNum">30</span><span class="secTitle">Akute Leukaemie-C</span><span class="secMeta" data-secmeta="30"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="30_Akute_Leukaemie-C__Frage_Leukaemie.docx.html" data-label="Frage Leukaemie" data-search="30 Akute Leukaemie-C Frage Leukaemie.docx 30_Akute_Leukaemie-C__Frage_Leukaemie.docx.html Frage Leukaemie" data-group="30 Akute Leukaemie-C" data-sec="30">Frage Leukaemie</a></li>
+      <li class="docItem"><a class="docLink" href="30_Akute_Leukaemie-C__30-chronische_Leukaemie_Vollsatz-C.docx.html" data-label="30-chronische Leukaemie Vollsatz-C" data-search="30 Akute Leukaemie-C 30-chronische Leukaemie Vollsatz-C.docx 30_Akute_Leukaemie-C__30-chronische_Leukaemie_Vollsatz-C.docx.html 30-chronische Leukaemie Vollsatz-C" data-group="30 Akute Leukaemie-C" data-sec="30">30-chronische Leukaemie Vollsatz-C</a></li>
+      <li class="docItem"><a class="docLink" href="30_Akute_Leukaemie-C__akute_Leukaemie_Vollsatz.docx.html" data-label="akute Leukaemie Vollsatz" data-search="30 Akute Leukaemie-C akute Leukaemie Vollsatz.docx 30_Akute_Leukaemie-C__akute_Leukaemie_Vollsatz.docx.html akute Leukaemie Vollsatz" data-group="30 Akute Leukaemie-C" data-sec="30">akute Leukaemie Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="30_Akute_Leukaemie-C__Leukaemie_DrGuntersFragen.docx.html" data-label="Leukaemie Dr Gunter Soruları" data-search="30 Akute Leukaemie-C Leukaemie_DrGuntersFragen.docx 30_Akute_Leukaemie-C__Leukaemie_DrGuntersFragen.docx.html Leukaemie Dr Gunter Soruları" data-group="30 Akute Leukaemie-C" data-sec="30">Leukaemie Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="30_Akute_Leukaemie-C__Weiteres_Vorgehen.docx.html" data-label="Devam / Yaklaşım" data-search="30 Akute Leukaemie-C Weiteres Vorgehen.docx 30_Akute_Leukaemie-C__Weiteres_Vorgehen.docx.html Devam / Yaklaşım" data-group="30 Akute Leukaemie-C" data-sec="30">Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="30_Akute_Leukaemie-C__Leukaemie.png.html" data-label="Leukaemie" data-search="30 Akute Leukaemie-C Leukaemie.png 30_Akute_Leukaemie-C__Leukaemie.png.html Leukaemie" data-group="30 Akute Leukaemie-C" data-sec="30">Leukaemie</a></li>
+      <li class="docItem"><a class="docLink" href="30_Akute_Leukaemie-C__akute_Leukaemie_Brief.png.html" data-label="akute Leukaemie Brief" data-search="30 Akute Leukaemie-C akute Leukaemie Brief.png 30_Akute_Leukaemie-C__akute_Leukaemie_Brief.png.html akute Leukaemie Brief" data-group="30 Akute Leukaemie-C" data-sec="30">akute Leukaemie Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="31">
+  <summary><span class="secNum">31</span><span class="secTitle">Morbus Hodgkin-C</span><span class="secMeta" data-secmeta="31"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="31_Morbus_Hodgkin-C__Morbus_Hodgkin_bfz.docx.html" data-label="Morbus Hodgkin bfz" data-search="31 Morbus Hodgkin-C Morbus Hodgkin bfz.docx 31_Morbus_Hodgkin-C__Morbus_Hodgkin_bfz.docx.html Morbus Hodgkin bfz" data-group="31 Morbus Hodgkin-C" data-sec="31">Morbus Hodgkin bfz</a></li>
+      <li class="docItem"><a class="docLink" href="31_Morbus_Hodgkin-C__Hodgkin_Lympfom_Vollsatz.docx.html" data-label="Hodgkin Lympfom Vollsatz" data-search="31 Morbus Hodgkin-C Hodgkin Lympfom Vollsatz.docx 31_Morbus_Hodgkin-C__Hodgkin_Lympfom_Vollsatz.docx.html Hodgkin Lympfom Vollsatz" data-group="31 Morbus Hodgkin-C" data-sec="31">Hodgkin Lympfom Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="31_Morbus_Hodgkin-C__Hodgkin_DrGuntersFragen.docx.html" data-label="Hodgkin Dr Gunter Soruları" data-search="31 Morbus Hodgkin-C Hodgkin_DrGuntersFragen.docx 31_Morbus_Hodgkin-C__Hodgkin_DrGuntersFragen.docx.html Hodgkin Dr Gunter Soruları" data-group="31 Morbus Hodgkin-C" data-sec="31">Hodgkin Dr Gunter Soruları</a></li>
+      <li class="docItem"><a class="docLink" href="31_Morbus_Hodgkin-C__Weiteres_Vorgehen__.docx.html" data-label="Devam / Yaklaşım" data-search="31 Morbus Hodgkin-C Weiteres Vorgehen  .docx 31_Morbus_Hodgkin-C__Weiteres_Vorgehen__.docx.html Devam / Yaklaşım" data-group="31 Morbus Hodgkin-C" data-sec="31">Devam / Yaklaşım</a></li>
+      <li class="docItem"><a class="docLink" href="31_Morbus_Hodgkin-C__M_Hodgkin.png.html" data-label="M Hodgkin" data-search="31 Morbus Hodgkin-C M Hodgkin.png 31_Morbus_Hodgkin-C__M_Hodgkin.png.html M Hodgkin" data-group="31 Morbus Hodgkin-C" data-sec="31">M Hodgkin</a></li>
+      <li class="docItem"><a class="docLink" href="31_Morbus_Hodgkin-C__Morbus_Hodgkin__Brief.png.html" data-label="Morbus Hodgkin Brief" data-search="31 Morbus Hodgkin-C Morbus Hodgkin  Brief.png 31_Morbus_Hodgkin-C__Morbus_Hodgkin__Brief.png.html Morbus Hodgkin Brief" data-group="31 Morbus Hodgkin-C" data-sec="31">Morbus Hodgkin Brief</a></li>
+    </ul>
+  </div>
+</details>
+<details class="sec" data-sec="32">
+  <summary><span class="secNum">32</span><span class="secTitle">DM-C</span><span class="secMeta" data-secmeta="32"></span></summary>
+  <div class="secBody">
+    <ul class="subList">
+      <li class="docItem"><a class="docLink" href="32_DM-C_Diabetes_mellitus_Typ_II_Vollsatz.docx.html" data-label="Diabetes mellitus Typ II Vollsatz" data-search="32 DM-C Diabetes mellitus Typ II Vollsatz.docx 32_DM-C_Diabetes_mellitus_Typ_II_Vollsatz.docx.html Diabetes mellitus Typ II Vollsatz" data-group="32 DM-C" data-sec="32">Diabetes mellitus Typ II Vollsatz</a></li>
+      <li class="docItem"><a class="docLink" href="32_DM-C_Diabetische_Ketoazidose_Vollsatz.docx.html" data-label="Diabetische Ketoazidose Vollsatz" data-search="32 DM-C Diabetische Ketoazidose Vollsatz.docx 32_DM-C_Diabetische_Ketoazidose_Vollsatz.docx.html Diabetische Ketoazidose Vollsatz" data-group="32 DM-C" data-sec="32">Diabetische Ketoazidose Vollsatz</a></li>
+    </ul>
+  </div>
+</details>
+        </nav>
+      </div>
+    </aside>
+
+    <main class="main" aria-label="Görüntüleyici">
+      <div class="mainHeader">
+        <button id="menuBtn" type="button" aria-label="Menü">☰</button>
+        <div id="docTitle">Bir doküman seç…</div>
+        <div class="mainActions">
+          <button class="btn" id="copyLinkBtn" type="button" title="Bu sayfaya link">Link</button>
+          <button class="btn primary" id="openTabBtn" type="button" title="Yeni sekmede aç">Yeni sekme</button>
+        </div>
+      </div>
+
+      <div class="viewer">
+        <iframe id="docFrame" title="Doküman" loading="eager"></iframe>
+        <div id="scrollTrack" title="Kaydırma göstergesi"><div id="scrollThumb"></div></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+  (() => {
+    const $ = (s, el=document) => el.querySelector(s);
+    const $$ = (s, el=document) => Array.from(el.querySelectorAll(s));
+
+    const sidebar = $("#sidebar");
+    const scrim = $("#scrim");
+    const menuBtn = $("#menuBtn");
+
+    const searchEl = $("#search");
+    const clearBtn = $("#clearBtn");
+    const resultEl = $("#resultCount");
+
+    const expandAllBtn = $("#expandAllBtn");
+    const collapseAllBtn = $("#collapseAllBtn");
+
+    const frame = $("#docFrame");
+    const docTitleEl = $("#docTitle");
+    const openTabBtn = $("#openTabBtn");
+    const copyLinkBtn = $("#copyLinkBtn");
+
+    const viewer = $(".viewer");
+    const track = $("#scrollTrack");
+    const thumb = $("#scrollThumb");
+
+    const LS = {
+      lastDoc: "fspdy.lastDoc.v1",
+      sideScroll: "fspdy.sidebarScroll.v1",
+      sideOpen: "fspdy.sidebarOpen.v1"
+    };
+
+    function debounce(fn, ms){
+      let t = null;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), ms);
+      };
+    }
+
+    function normTR(s){
+      s = (s || "").toString().toLocaleLowerCase("tr");
+      // strip diacritics
+      try { s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); } catch {}
+      s = s.replace(/ı/g, "i");
+      s = s.replace(/\s+/g, " ").trim();
+      return s;
+    }
+
+    function decodeURIComponentSafe(s){
+      try { return decodeURIComponent(s); } catch { return s; }
+    }
+
+    const items = $$(".docLink").map(a => {
+      const li = a.closest("li");
+      return {
+        a,
+        li,
+        href: a.getAttribute("href"),
+        label: a.dataset.label || a.textContent.trim(),
+        search: normTR(a.dataset.search || a.textContent)
+      };
+    });
+
+    let activeHref = "";
+
+    function setActive(href){
+      for (const it of items){
+        it.a.classList.toggle("active", it.href === href);
+      }
+    }
+
+    function setTitle(label){
+      docTitleEl.textContent = label || "Bir doküman seç…";
+      document.title = (label ? (label + " — ") : "") + "Dr Yemliha FSP notları";
+    }
+
+    function isMobile(){
+      return window.matchMedia("(max-width: 900px)").matches;
+    }
+
+    function openSidebar(){
+      sidebar.classList.add("open");
+      scrim.classList.add("on");
+      localStorage.setItem(LS.sideOpen, "1");
+      // search shortcut: focus search
+      setTimeout(() => { try { searchEl.focus(); } catch {} }, 0);
+    }
+    function closeSidebar(){
+      sidebar.classList.remove("open");
+      scrim.classList.remove("on");
+      localStorage.setItem(LS.sideOpen, "0");
+    }
+    function toggleSidebar(){
+      if (sidebar.classList.contains("open")) closeSidebar();
+      else openSidebar();
+    }
+    function closeSidebarIfMobile(){
+      if (isMobile()) closeSidebar();
+    }
+
+    menuBtn?.addEventListener("click", toggleSidebar);
+    scrim.addEventListener("click", closeSidebar);
+
+    // restore sidebar scroll position
+    try {
+      const v = Number(localStorage.getItem(LS.sideScroll) || "0");
+      if (Number.isFinite(v)) sidebar.scrollTop = v;
+    } catch {}
+
+    sidebar.addEventListener("scroll", debounce(() => {
+      try { localStorage.setItem(LS.sideScroll, String(sidebar.scrollTop || 0)); } catch {}
+    }, 200));
+
+    // Expand/collapse all (only visible ones)
+    expandAllBtn.addEventListener("click", () => {
+      $$(".sec:not(.hidden)").forEach(d => d.open = true);
+    });
+    collapseAllBtn.addEventListener("click", () => {
+      $$(".sec").forEach(d => d.open = false);
+    });
+
+    // Search / filter
+    function updateSectionMeta(){
+      // show visible count in each summary
+      $$(".sec").forEach(sec => {
+        const num = sec.getAttribute("data-sec") || "";
+        const meta = sec.querySelector(".secMeta");
+        if (!meta) return;
+        const visibleItems = sec.querySelectorAll("li.docItem:not(.hidden)").length;
+        const totalItems = sec.querySelectorAll("li.docItem").length;
+        meta.textContent = (visibleItems === totalItems) ? `${totalItems}` : `${visibleItems}/${totalItems}`;
+      });
+    }
+
+    function applySearch(){
+      const q = normTR(searchEl.value);
+      const terms = q.split(" ").filter(Boolean);
+
+      let shown = 0;
+      for (const it of items){
+        const ok = terms.length === 0 || terms.every(t => it.search.includes(t));
+        it.li.classList.toggle("hidden", !ok);
+        if (ok) shown++;
+      }
+
+      for (const sec of $$(".sec")){
+        const any = sec.querySelector("li.docItem:not(.hidden)");
+        sec.classList.toggle("hidden", !any);
+        if (q && any) sec.open = true;
+      }
+
+      updateSectionMeta();
+      resultEl.textContent = q ? `${shown} sonuç` : `${items.length} doküman`;
+    }
+
+    const applySearchDebounced = debounce(applySearch, 80);
+    searchEl.addEventListener("input", applySearchDebounced);
+    clearBtn.addEventListener("click", () => {
+      searchEl.value = "";
+      applySearch();
+      try { searchEl.focus(); } catch {}
+    });
+
+    // Open doc
+    function openDoc(href, opts={}){
+      if (!href) return;
+      const it = items.find(x => x.href === href);
+      const label = it ? it.label : href;
+
+      activeHref = href;
+      setActive(href);
+      setTitle(label);
+
+      if (frame.getAttribute("src") !== href) frame.setAttribute("src", href);
+
+      try { localStorage.setItem(LS.lastDoc, href); } catch {}
+
+      // keep deep-link
+      const hash = "doc=" + encodeURIComponent(href);
+      if (opts.push !== false){
+        if (location.hash.slice(1) !== hash) {
+          history.replaceState(null, "", location.pathname + "#" + hash);
+        }
+      }
+
+      closeSidebarIfMobile();
+    }
+
+    function openFromHashOrLast(){
+      const params = new URLSearchParams(location.hash.replace(/^#/, ""));
+      const fromHash = params.get("doc");
+      const last = (fromHash ? decodeURIComponentSafe(fromHash) : null) || (localStorage.getItem(LS.lastDoc) || "");
+      const exists = items.some(it => it.href === last);
+      const first = items[0]?.href || "";
+      openDoc(exists ? last : first, { push: false });
+    }
+
+    // link click -> iframe
+    for (const it of items){
+      it.a.addEventListener("click", (e) => {
+        e.preventDefault();
+        openDoc(it.href);
+      });
+    }
+
+    window.addEventListener("hashchange", () => {
+      const params = new URLSearchParams(location.hash.replace(/^#/, ""));
+      const h = params.get("doc");
+      if (!h) return;
+      const href = decodeURIComponentSafe(h);
+      if (items.some(it => it.href === href)) openDoc(href, { push: false });
+    });
+
+    // header actions
+    openTabBtn.addEventListener("click", () => {
+      const href = activeHref || frame.getAttribute("src") || "";
+      if (!href) return;
+      window.open(href, "_blank", "noopener");
+    });
+
+    copyLinkBtn.addEventListener("click", async () => {
+      const href = activeHref || frame.getAttribute("src") || "";
+      if (!href) return;
+      const url = location.origin + location.pathname + "#doc=" + encodeURIComponent(href);
+
+      try {
+        await navigator.clipboard.writeText(url);
+        const old = copyLinkBtn.textContent;
+        copyLinkBtn.textContent = "Kopyalandı";
+        setTimeout(() => copyLinkBtn.textContent = old, 900);
+      } catch {
+        // fallback
+        prompt("Link:", url);
+      }
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k"){
+        e.preventDefault();
+        openSidebar();
+      }
+      if (e.key === "Escape" && isMobile() && sidebar.classList.contains("open")) {
+        e.preventDefault();
+        closeSidebar();
+      }
+      if (e.key === "/" && document.activeElement !== searchEl){
+        e.preventDefault();
+        if (isMobile()) openSidebar();
+        setTimeout(() => { try { searchEl.focus(); } catch {} }, 0);
+      }
+    });
+
+    // If user lands on mobile, keep sidebar closed by default
+    try {
+      if (isMobile() && localStorage.getItem(LS.sideOpen) === "1") openSidebar();
+    } catch {}
+
+    // ==== Custom mini scroll indicator inside viewer (same-origin iframe) ====
+    let scroller = null;
+    let cw = null;
+    let hideTimer = null;
+
+    function showScrollTemporarily(){
+      viewer.classList.add("showScroll");
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => viewer.classList.remove("showScroll"), 900);
+    }
+
+    function updateThumb(){
+      if (!scroller) return;
+      const sh = scroller.scrollHeight || 0;
+      const ch = scroller.clientHeight || 0;
+      const st = scroller.scrollTop || 0;
+
+      if (sh <= ch || ch <= 0) {
+        thumb.style.opacity = "0";
+        return;
+      }
+
+      const trackH = track.clientHeight || 1;
+      const minThumb = 28;
+      const th = Math.max(minThumb, Math.round(trackH * (ch / sh)));
+      const maxTop = Math.max(0, trackH - th);
+      const top = Math.round(maxTop * (st / (sh - ch)));
+
+      thumb.style.height = th + "px";
+      thumb.style.transform = `translateY(${top}px)`;
+      thumb.style.opacity = "1";
+    }
+
+    function bindFrameScroll(){
+      try {
+        cw = frame.contentWindow;
+        const doc = frame.contentDocument;
+        if (!cw || !doc) return;
+        scroller = doc.scrollingElement || doc.documentElement;
+
+        const onScroll = () => { updateThumb(); showScrollTemporarily(); };
+        cw.addEventListener("scroll", onScroll, { passive: true });
+
+        // initial measure (fonts/images may load later)
+        setTimeout(() => { updateThumb(); }, 250);
+        setTimeout(() => { updateThumb(); }, 1200);
+      } catch {
+        scroller = null;
+        thumb.style.opacity = "0";
+      }
+    }
+
+    frame.addEventListener("load", () => {
+      bindFrameScroll();
+      showScrollTemporarily();
+    });
+
+    track.addEventListener("pointerdown", (e) => {
+      if (!scroller) return;
+      const rect = track.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const sh = scroller.scrollHeight || 0;
+      const ch = scroller.clientHeight || 0;
+      if (sh <= ch) return;
+      const ratio = Math.max(0, Math.min(1, y / Math.max(1, rect.height)));
+      scroller.scrollTop = Math.round((sh - ch) * ratio);
+      showScrollTemporarily();
+    });
+
+    // Boot
+    applySearch();
+    openFromHashOrLast();
+
+  })();
+  </script>
+</body>
+</html>
